@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/SistemaVendas.Api/">
+    <Project Path="SistemaVendas.Api/SistemaVendas.Api.csproj" />
+  </Folder>
+  <Folder Name="/SistemaVendas.Application/">
+    <Project Path="SistemaVendas.Application/SistemaVendas.Application.csproj" />
+  </Folder>
+  <Folder Name="/SistemaVendas.Domain/">
+    <Project Path="SistemaVendas.Domain/SistemaVendas.Domain.csproj" />
+  </Folder>
+  <Folder Name="/SistemaVendas.Infrastructure/">
+    <Project Path="SistemaVendas.Infrastructure/SistemaVendas.Infrastructure.csproj" />
+  </Folder>
+</Solution>
