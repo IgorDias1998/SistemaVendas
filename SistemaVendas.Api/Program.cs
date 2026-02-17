@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Application.Services;
+using SistemaVendas.Infrastructure.Integration.Cep;
 using SistemaVendas.Infrastructure.Persistence;
 using SistemaVendas.Infrastructure.Repositories;
 
@@ -23,6 +24,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IProdutoService, ProdutoService>();
 
 builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
+
+builder.Services.AddHttpClient<ICepService, ViaCepService>();
 
 var app = builder.Build();
 

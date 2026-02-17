@@ -2,12 +2,12 @@
 {
     public class Pessoa
     {
-        public Guid ClienteId { get; set; } = Guid.NewGuid();
-        public string NomeCliente { get; set; } = string.Empty;
-        public string EmailCliente { get; set; } = string.Empty;
+        public Guid PessoaId { get; set; } = Guid.NewGuid();
+        public string NomePessoa { get; set; } = string.Empty;
+        public string EmailPessoa { get; set; } = string.Empty;
         public DateTime DataNascimento { get; set; }
-        public string TelefoneCliente { get; set; } = string.Empty;
-        public string DocumentoCliente { get; set; } = string.Empty;
-        public Endereco EnderecoCliente { get; private set; } = null!;
+        public string TelefonePessoa { get; set; } = string.Empty;
+        public string DocumentoPessoa { get; set; } = string.Empty;
+        public Endereco EnderecoPessoa { get; private set; }
     }
 }
