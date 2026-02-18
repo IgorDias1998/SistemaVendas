@@ -15,7 +15,6 @@ namespace SistemaVendas.Infrastructure.Mappings
                 t.HasCheckConstraint("CK_Produtos_Estoque_NonNegative", "EstoqueProduto >= 0");
             });
 
-            // primary key
             builder.HasKey(p => p.ProdutoId);
 
             builder.Property(p => p.TituloProduto)
@@ -29,7 +28,6 @@ namespace SistemaVendas.Infrastructure.Mappings
                 .IsRequired()
                 .HasPrecision(18, 2);
 
-            // Estoque is an int in the model — no conversion needed. Set a default and ensure non-negative
             builder.Property(p => p.EstoqueProduto)
                 .HasDefaultValue(0);
 

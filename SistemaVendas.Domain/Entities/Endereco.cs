@@ -2,7 +2,7 @@
 {
     public class Endereco
     {
-        public Guid EnderecoId { get; private set; }
+        public Guid EnderecoId { get; set; } = Guid.NewGuid();
         public string Cep { get; set; } = string.Empty;
         public string Logradouro { get; set; } = string.Empty;
         public string Bairro { get; set; } = string.Empty;

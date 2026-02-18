@@ -15,12 +15,12 @@ namespace SistemaVendas.Infrastructure.Repositories
 
         public Task<Pessoa> BuscarPessoaIdAsync(Guid id)
         {
-            throw new NotImplementedException();
+            return _context.Pessoas.FindAsync(id).AsTask();
         }
 
         public Task<IEnumerable<Pessoa>> BuscarPessoasAsync()
         {
-            throw new NotImplementedException();
+            return Task.FromResult(_context.Pessoas.AsEnumerable());
         }
 
         public async Task CriarPessoaAsync(Pessoa pessoa)
@@ -31,12 +31,19 @@ namespace SistemaVendas.Infrastructure.Repositories
 
         public Task AtualizarPessoaAsync(Guid id, Pessoa pessoa)
         {
-            throw new NotImplementedException();
+            _context.Pessoas.Update(pessoa);
+            return _context.SaveChangesAsync();
         }
 
         public Task<Pessoa> DeletarPessoaAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var pessoa = _context.Pessoas.Find(id);
+            if (pessoa is null)
+                return Task.FromResult<Pessoa>(null!);
+
+            _context.Pessoas.Remove(pessoa);
+            _context.SaveChangesAsync();
+            return Task.FromResult(pessoa);
         }
     }
 }
