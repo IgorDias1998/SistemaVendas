@@ -25,6 +25,10 @@ builder.Services.AddScoped<IProdutoService, ProdutoService>();
 
 builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
 
+builder.Services.AddScoped<IPessoaService, PessoaService>();
+
+builder.Services.AddScoped<IPessoaRepository, PessoaRepository>();
+
 builder.Services.AddHttpClient<ICepService, ViaCepService>();
 
 var app = builder.Build();
