@@ -8,6 +8,6 @@ namespace SistemaVendas.Application.Interfaces
         public Task<IEnumerable<Pessoa>> BuscarPessoasAsync();
         public Task<Pessoa> BuscarPessoaIdAsync(Guid id);
         public Task AtualizarPessoaAsync(Guid id, Pessoa pessoa);
-        public Task<Pessoa> DeletarPessoaAsync(Guid id);
+        public Task DeletarPessoaAsync(Guid id);
     }
 }

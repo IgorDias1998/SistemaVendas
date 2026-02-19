@@ -1,4 +1,5 @@
-﻿using SistemaVendas.Application.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Domain.Entities;
 using SistemaVendas.Infrastructure.Persistence;
 
@@ -15,12 +16,18 @@ namespace SistemaVendas.Infrastructure.Repositories
 
         public Task<Pessoa> BuscarPessoaIdAsync(Guid id)
         {
-            return _context.Pessoas.FindAsync(id).AsTask();
+            return _context.Pessoas
+                .Include(p => p.EnderecoPessoa)
+                .FirstOrDefaultAsync(p => p.PessoaId == id)!;
         }
 
         public Task<IEnumerable<Pessoa>> BuscarPessoasAsync()
         {
-            return Task.FromResult(_context.Pessoas.AsEnumerable());
+            return _context.Pessoas
+                .Include(p => p.EnderecoPessoa)
+                .ToListAsync()
+                .ContinueWith<Task<IEnumerable<Pessoa>>>(t => Task.FromResult<IEnumerable<Pessoa>>(t.Result))
+                .Unwrap();
         }
 
         public async Task CriarPessoaAsync(Pessoa pessoa)
@@ -35,15 +42,23 @@ namespace SistemaVendas.Infrastructure.Repositories
             return _context.SaveChangesAsync();
         }
 
-        public Task<Pessoa> DeletarPessoaAsync(Guid id)
+        public Task DeletarPessoaAsync(Guid id)
         {
-            var pessoa = _context.Pessoas.Find(id);
+            return DeleteAsync(id);
+        }
+
+        private async Task<Pessoa> DeleteAsync(Guid id)
+        {
+            var pessoa = await _context.Pessoas
+                .Include(p => p.EnderecoPessoa)
+                .FirstOrDefaultAsync(p => p.PessoaId == id);
+
             if (pessoa is null)
-                return Task.FromResult<Pessoa>(null!);
+                return null!;
 
             _context.Pessoas.Remove(pessoa);
-            _context.SaveChangesAsync();
-            return Task.FromResult(pessoa);
+            await _context.SaveChangesAsync();
+            return pessoa;
         }
     }
 }

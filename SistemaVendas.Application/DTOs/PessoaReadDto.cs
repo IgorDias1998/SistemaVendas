@@ -10,6 +10,6 @@ namespace SistemaVendas.Application.DTOs
         public DateTime DataNascimento { get; set; }
         public string TelefonePessoa { get; set; } = string.Empty;
         public string DocumentoPessoa { get; set; } = string.Empty;
-        public Endereco EnderecoPessoa { get; private set; }
+        public Endereco EnderecoPessoa { get; set; }
     }
 }
