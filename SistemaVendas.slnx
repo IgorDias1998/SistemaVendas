@@ -11,4 +11,7 @@
   <Folder Name="/SistemaVendas.Infrastructure/">
     <Project Path="SistemaVendas.Infrastructure/SistemaVendas.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/SistemaVendas.Tests/">
+    <Project Path="SistemaVendas.Tests/SistemaVendas.Tests/SistemaVendas.Tests.csproj" Id="4d013bf4-8096-4584-a755-0b45ed3fb457" />
+  </Folder>
 </Solution>

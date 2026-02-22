@@ -35,14 +35,17 @@ namespace SistemaVendas.Application.Services
 
         public async Task CriarProduto(ProdutoCriarDto produtoDto)
         {
-            var produto = new Produto
+            // Instancia usando o construtor que exige parâmetros:
+            var produto = new Produto(
+                produtoDto.TituloProduto,
+                produtoDto.DescricaoProduto,
+                produtoDto.PrecoProduto,
+                produtoDto.EstoqueProduto,
+                produtoDto.CodigoProduto
+            )
             {
-                ProdutoId = Guid.NewGuid(),
-                TituloProduto = produtoDto.TituloProduto,
-                DescricaoProduto = produtoDto.DescricaoProduto,
-                PrecoProduto = produtoDto.PrecoProduto,
-                EstoqueProduto = produtoDto.EstoqueProduto,
-                CodigoProduto = produtoDto.CodigoProduto
+                // Define o ID separadamente caso o construtor não o crie internamente
+                ProdutoId = Guid.NewGuid()
             };
 
             await _repository.AdicionarProdutoAsync(produto); 

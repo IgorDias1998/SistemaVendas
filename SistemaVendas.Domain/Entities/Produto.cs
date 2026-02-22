@@ -14,9 +14,6 @@
             if (preco < 0)
                 throw new Exception("Preço não pode ser negativo.");
 
-            if (estoque < 0)
-                throw new Exception("Estoque não pode ser negativo.");
-
             TituloProduto = titulo;
             DescricaoProduto = descricao;
             PrecoProduto = preco;
