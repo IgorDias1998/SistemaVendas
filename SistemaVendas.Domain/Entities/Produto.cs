@@ -20,5 +20,7 @@
             EstoqueProduto = estoque;
             CodigoProduto = codigo;
         }
+
+        protected Produto() { }
     }
 }
