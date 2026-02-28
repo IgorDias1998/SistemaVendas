@@ -50,5 +50,11 @@ namespace SistemaVendas.Infrastructure.Repositories
             _context.Produtos.Remove(produto);
             await _context.SaveChangesAsync();
         }
+
+        public async Task AdicionarListaAsync(List<Produto> produtos)
+        {
+            await _context.Produtos.AddRangeAsync(produtos);
+            await _context.SaveChangesAsync();
+        }
     }
 }

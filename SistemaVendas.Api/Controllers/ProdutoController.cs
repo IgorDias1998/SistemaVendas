@@ -10,10 +10,13 @@ namespace SistemaVendas.Api.Controllers
     public class ProdutoController : ControllerBase
     {
         private readonly IProdutoService _produtoService;
+        private readonly IProdutoImportService _importService;
 
-        public ProdutoController(IProdutoService produtoService)
+        public ProdutoController(IProdutoService produtoService,
+            IProdutoImportService importService)
         {
             _produtoService = produtoService;
+            _importService = importService;
         }
 
         [HttpPost]
@@ -51,6 +54,17 @@ namespace SistemaVendas.Api.Controllers
         {
             await _produtoService.DeletarProdutoAsync(id);
             return Ok("Produto deletado com sucesso...");
+        }
+
+        [HttpPost("importarCSV")]
+        public async Task<IActionResult> ImportarProdutos(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("Arquivo inválido.");
+
+            await _importService.ImportarAsync(file.OpenReadStream());
+
+            return Ok("Produtos importados com sucesso.");
         }
     }
 }

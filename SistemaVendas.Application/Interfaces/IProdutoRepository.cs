@@ -9,5 +9,6 @@ namespace SistemaVendas.Application.Interfaces
         public Task<Produto?> BuscarProdutoPorIdAsync(Guid produtoId);
         public Task AtualizarProdutoAsync(Produto pessoa);
         public Task DeletarProdutoAsync(Guid produtoId);
+        Task AdicionarListaAsync(List<Produto> produtos);
     }
 }

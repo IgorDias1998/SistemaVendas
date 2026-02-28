@@ -1,6 +1,9 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Application.Services;
+using SistemaVendas.Application.Validators;
 using SistemaVendas.Infrastructure.Integration.Cep;
 using SistemaVendas.Infrastructure.Persistence;
 using SistemaVendas.Infrastructure.Repositories;
@@ -30,6 +33,10 @@ builder.Services.AddScoped<IPessoaService, PessoaService>();
 builder.Services.AddScoped<IPessoaRepository, PessoaRepository>();
 
 builder.Services.AddHttpClient<ICepService, ViaCepService>();
+
+builder.Services.AddScoped<IProdutoImportService, ProdutoImportService>();
+
+builder.Services.AddScoped<IValidator<ProdutoCriarDto>, ProdutoValidator>();
 
 var app = builder.Build();
 

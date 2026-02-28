@@ -59,7 +59,7 @@ public class ProdutoTests
         Assert.False(result.IsValid);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Deve salvar um novo produto no banco de dados.")]
     public async Task DeveSalvarProdutoNoBanco()
     {
         // Arrange
@@ -74,5 +74,24 @@ public class ProdutoTests
 
         // Assert
         Assert.NotNull(produtoSalvo);
+    }
+
+    [Fact(DisplayName = "Deve salvar um novo produto no banco de dados e encontrar o mesmo.")]
+    public async Task DeveSalvarProdutoNoBancoEBuscar()
+    {
+        // Arrange
+        var context = DbContextFactory.Create();
+        var repository = new ProdutoRepository(context);
+        var produto = new Produto("Produto Teste", "Desc", 10, 5, "ABC123");
+
+        // Act
+        await repository.AdicionarProdutoAsync(produto);
+
+        var produtoSalvo = await context.Produtos.FirstOrDefaultAsync();
+        var produtoEncontrado = await repository.BuscarProdutoPorIdAsync(produtoSalvo.ProdutoId);
+
+        // Assert
+        Assert.NotNull(produtoEncontrado);
+        Assert.Equal(produtoSalvo.ProdutoId, produtoEncontrado.ProdutoId);
     }
 }
