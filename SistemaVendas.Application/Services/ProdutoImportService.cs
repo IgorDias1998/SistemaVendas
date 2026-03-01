@@ -29,34 +29,53 @@ namespace SistemaVendas.Application.Services
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
                 Delimiter = ";",
-                HasHeaderRecord = true
+                HasHeaderRecord = true,
+                IgnoreBlankLines = true,
+                MissingFieldFound = null,
+                HeaderValidated = null
             };
 
             using var csv = new CsvReader(reader, config);
 
-            var registros = csv.GetRecords<ProdutoCriarDto>().ToList();
-
             var produtos = new List<Produto>();
 
-            foreach (var dto in registros)
+            while (await csv.ReadAsync())
             {
-                var validation = await _validator.ValidateAsync(dto);
+                try
+                {
+                    var dto = csv.GetRecord<ProdutoCriarDto>();
 
-                if (!validation.IsValid)
-                    throw new Exception("Erro de validação no CSV.");
+                    // Ignora linha vazia
+                    if (string.IsNullOrWhiteSpace(dto.TituloProduto))
+                        continue;
 
-                var produto = new Produto(
-                    dto.TituloProduto,
-                    dto.DescricaoProduto,
-                    dto.PrecoProduto,
-                    dto.EstoqueProduto,
-                    dto.CodigoProduto
-                );
+                    // Validação FluentValidation
+                    var validation = await _validator.ValidateAsync(dto);
 
-                produtos.Add(produto);
+                    if (!validation.IsValid)
+                        continue;
+
+                    var produto = new Produto(
+                        dto.TituloProduto,
+                        dto.DescricaoProduto,
+                        dto.PrecoProduto,
+                        dto.EstoqueProduto,
+                        dto.CodigoProduto
+                    );
+
+                    produtos.Add(produto);
+                }
+                catch
+                {
+                    // Ignora linha inválida
+                    continue;
+                }
             }
 
-            await _repository.AdicionarListaAsync(produtos);
+            if (produtos.Any())
+            {
+                await _repository.AdicionarListaAsync(produtos);
+            }
         }
     }
 }
