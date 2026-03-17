@@ -12,6 +12,8 @@ namespace SistemaVendas.Infrastructure.Persistence
         public DbSet<Produto> Produtos { get; set; }
         public DbSet<Pessoa> Pessoas { get; set; }
         public DbSet<Endereco> Enderecos { get; set; }
+        public DbSet<Venda> Vendas { get; set; }
+        public DbSet<ItemVenda> ItensVenda { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
