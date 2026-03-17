@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Domain.Entities;
 using SistemaVendas.Infrastructure.Persistence;
@@ -17,8 +16,7 @@ namespace SistemaVendas.Infrastructure.Repositories
 
         public async Task AdicionarProdutoAsync(Produto produto)
         {
-            _context.Produtos.AddAsync(produto);
-
+            await _context.Produtos.AddAsync(produto);
             await _context.SaveChangesAsync();
         }
 
@@ -31,11 +29,9 @@ namespace SistemaVendas.Infrastructure.Repositories
 
         public async Task<IEnumerable<Produto>> BuscarProdutosAsync()
         {
-            var produtos = await _context.Produtos
-                            .AsNoTracking()
-                            .ToListAsync();
-
-            return produtos;
+            return await _context.Produtos
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task AtualizarProdutoAsync(Produto produto)
@@ -47,6 +43,10 @@ namespace SistemaVendas.Infrastructure.Repositories
         public async Task DeletarProdutoAsync(Guid produtoId)
         {
             var produto = await _context.Produtos.FirstOrDefaultAsync(p => p.ProdutoId == produtoId);
+
+            if (produto is null)
+                return;
+
             _context.Produtos.Remove(produto);
             await _context.SaveChangesAsync();
         }

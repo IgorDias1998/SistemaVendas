@@ -1,4 +1,3 @@
-﻿using System.Globalization;
 using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Domain.Entities;
@@ -19,9 +18,7 @@ namespace SistemaVendas.Application.Services
             var produto = await _repository.BuscarProdutoPorIdAsync(produtoDtoId);
 
             if (produto is null)
-            {
-                throw new CultureNotFoundException(nameof(produto));
-            }
+                throw new KeyNotFoundException("Produto não encontrado.");
 
             return MapearParaResponse(produto);
         }
@@ -33,38 +30,39 @@ namespace SistemaVendas.Application.Services
             return produtos.Select(MapearParaResponse).ToList();
         }
 
-        public async Task CriarProduto(ProdutoCriarDto produtoDto)
+        public async Task<ProdutoResponseDto> CriarProdutoAsync(ProdutoCriarDto produtoDto)
         {
-            // Instancia usando o construtor que exige parâmetros:
             var produto = new Produto(
                 produtoDto.TituloProduto,
                 produtoDto.DescricaoProduto,
                 produtoDto.PrecoProduto,
                 produtoDto.EstoqueProduto,
                 produtoDto.CodigoProduto
-            )
-            {
-                // Define o ID separadamente caso o construtor não o crie internamente
-                ProdutoId = Guid.NewGuid()
-            };
+            );
 
-            await _repository.AdicionarProdutoAsync(produto); 
+            await _repository.AdicionarProdutoAsync(produto);
+
+            return MapearParaResponse(produto);
         }
 
-        public async Task AtualizarProdutoAsync(Guid Id, ProdutoAtualizarDto produtoDto)
+        public async Task<ProdutoResponseDto> AtualizarProdutoAsync(Guid id, ProdutoAtualizarDto produtoDto)
         {
-            var produto = await _repository.BuscarProdutoPorIdAsync(Id);
+            var produto = await _repository.BuscarProdutoPorIdAsync(id);
 
             if (produto is null)
-                throw new Exception("Produto não encontrado..");
+                throw new KeyNotFoundException("Produto não encontrado.");
 
-            produto.TituloProduto = produtoDto.TituloProduto;
-            produto.DescricaoProduto = produtoDto.DescricaoProduto;
-            produto.PrecoProduto = produtoDto.PrecoProduto;
-            produto.EstoqueProduto = produtoDto.EstoqueProduto;
-            produto.CodigoProduto = produtoDto.CodigoProduto;
+            produto.AtualizarDados(
+                produtoDto.TituloProduto,
+                produtoDto.DescricaoProduto,
+                produtoDto.PrecoProduto,
+                produtoDto.EstoqueProduto,
+                produtoDto.CodigoProduto
+            );
 
             await _repository.AtualizarProdutoAsync(produto);
+
+            return MapearParaResponse(produto);
         }
 
         public async Task DeletarProdutoAsync(Guid id)
@@ -72,12 +70,12 @@ namespace SistemaVendas.Application.Services
             var produto = await _repository.BuscarProdutoPorIdAsync(id);
 
             if (produto is null)
-                throw new Exception("Produto não encontrado..");
+                throw new KeyNotFoundException("Produto não encontrado.");
 
             await _repository.DeletarProdutoAsync(produto.ProdutoId);
         }
 
-        private ProdutoResponseDto MapearParaResponse(Produto produto)
+        private static ProdutoResponseDto MapearParaResponse(Produto produto)
         {
             return new ProdutoResponseDto
             {

@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
-using SistemaVendas.Application.Services;
 
 namespace SistemaVendas.Api.Controllers
 {
@@ -12,8 +11,7 @@ namespace SistemaVendas.Api.Controllers
         private readonly IProdutoService _produtoService;
         private readonly IProdutoImportService _importService;
 
-        public ProdutoController(IProdutoService produtoService,
-            IProdutoImportService importService)
+        public ProdutoController(IProdutoService produtoService, IProdutoImportService importService)
         {
             _produtoService = produtoService;
             _importService = importService;
@@ -22,15 +20,14 @@ namespace SistemaVendas.Api.Controllers
         [HttpPost]
         public async Task<ActionResult> CadastrarProduto([FromBody] ProdutoCriarDto produtoDto)
         {
-            await _produtoService.CriarProduto(produtoDto);
-            return Ok("Produto criado com sucesso..");
+            var produtoCriado = await _produtoService.CriarProdutoAsync(produtoDto);
+            return CreatedAtAction(nameof(BuscarProdutoPorId), new { id = produtoCriado.ProdutoId }, produtoCriado);
         }
 
         [HttpGet]
         public async Task<ActionResult> BuscarTodosProdutos()
         {
             var produtos = await _produtoService.BuscarProdutosAsync();
-
             return Ok(produtos);
         }
 
@@ -38,22 +35,21 @@ namespace SistemaVendas.Api.Controllers
         public async Task<ActionResult> BuscarProdutoPorId(Guid id)
         {
             var produto = await _produtoService.BuscarProdutoPorIdAsync(id);
-
             return Ok(produto);
         }
 
         [HttpPut("{id:guid}")]
         public async Task<ActionResult> AtualizarProduto(Guid id, [FromBody] ProdutoAtualizarDto produtoAtualizarDto)
         {
-            await _produtoService.AtualizarProdutoAsync(id, produtoAtualizarDto);
-            return Ok("Produto atualizado com sucesso...");
+            var produtoAtualizado = await _produtoService.AtualizarProdutoAsync(id, produtoAtualizarDto);
+            return Ok(produtoAtualizado);
         }
 
-        [HttpDelete]
+        [HttpDelete("{id:guid}")]
         public async Task<ActionResult> RemoverProduto(Guid id)
         {
             await _produtoService.DeletarProdutoAsync(id);
-            return Ok("Produto deletado com sucesso...");
+            return NoContent();
         }
 
         [HttpPost("importarCSV")]

@@ -1,14 +1,13 @@
-﻿using SistemaVendas.Application.DTOs;
-using SistemaVendas.Domain.Entities;
+using SistemaVendas.Application.DTOs;
 
 namespace SistemaVendas.Application.Interfaces
 {
     public interface IProdutoService
     {
-        public Task CriarProduto(ProdutoCriarDto produtoDto);
-        public Task<IEnumerable<ProdutoResponseDto>> BuscarProdutosAsync();
-        public Task<ProdutoResponseDto?> BuscarProdutoPorIdAsync(Guid produtoDtoId);
-        public Task AtualizarProdutoAsync(Guid Id, ProdutoAtualizarDto pessoa);
-        public Task DeletarProdutoAsync(Guid id);
+        Task<ProdutoResponseDto> CriarProdutoAsync(ProdutoCriarDto produtoDto);
+        Task<IEnumerable<ProdutoResponseDto>> BuscarProdutosAsync();
+        Task<ProdutoResponseDto?> BuscarProdutoPorIdAsync(Guid produtoDtoId);
+        Task<ProdutoResponseDto> AtualizarProdutoAsync(Guid id, ProdutoAtualizarDto produtoDto);
+        Task DeletarProdutoAsync(Guid id);
     }
 }

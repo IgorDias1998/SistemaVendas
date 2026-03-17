@@ -26,8 +26,6 @@ namespace SistemaVendas.Infrastructure.Mappings
                 .HasForeignKey(iv => iv.VendaId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(iv => iv.Produto);
-
             builder.HasOne(iv => iv.Produto)
                 .WithMany(Produto => Produto.ItensVenda)
                 .HasForeignKey(iv => iv.ProdutoId)
