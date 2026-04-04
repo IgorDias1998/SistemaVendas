@@ -1,4 +1,5 @@
-﻿using SistemaVendas.Application.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Domain.Entities;
 using SistemaVendas.Infrastructure.Persistence;
 
@@ -13,34 +14,61 @@ namespace SistemaVendas.Infrastructure.Repositories
             _context = context;
         }
 
-        public Task AdicionarListaVendaAsync(List<Venda> vendas)
+        public async Task AdicionarListaVendaAsync(List<Venda> vendas)
         {
-            throw new NotImplementedException();
+            await _context.Vendas.AddRangeAsync(vendas);
+            await _context.SaveChangesAsync();
         }
 
-        public Task AdicionarVendaAsync(Venda venda)
+        public async Task<Venda> AdicionarVendaAsync(Venda venda)
         {
-            throw new NotImplementedException();
+            await _context.Vendas.AddAsync(venda);
+            await _context.SaveChangesAsync();
+
+            return venda;
         }
 
-        public Task AtualizarVendaAsync(Venda venda)
+        public async Task<bool> AtualizarVendaAsync(Venda venda)
         {
-            throw new NotImplementedException();
+            _context.Vendas.Update(venda);
+
+            var linhasAfetadas = await _context.SaveChangesAsync();
+            return linhasAfetadas > 0;
         }
 
-        public Task<Venda?> BuscarVendaPorIdAsync(int vendaId)
+        public async Task<Venda?> BuscarVendaPorIdAsync(int vendaId)
         {
-            throw new NotImplementedException();
+            return await _context.Vendas
+                .AsNoTracking()
+                .Include(v => v.Pessoa)
+                .Include(v => v.ItensVenda)
+                    .ThenInclude(iv => iv.Produto)
+                .FirstOrDefaultAsync(v => v.VendaId == vendaId);
         }
 
-        public Task<IEnumerable<Venda>> BuscarVendasAsync()
+        public async Task<IEnumerable<Venda>> BuscarVendasAsync()
         {
-            throw new NotImplementedException();
+            return await _context.Vendas
+                .AsNoTracking()
+                .Include(v => v.Pessoa)
+                .Include(v => v.ItensVenda)
+                    .ThenInclude(iv => iv.Produto)
+                .ToListAsync();
         }
 
-        public Task DeletarVendaAsync(int vendaId)
+        public async Task<bool> DeletarVendaAsync(int vendaId)
         {
-            throw new NotImplementedException();
+            var venda = await _context.Vendas
+                .Include(v => v.ItensVenda)
+                .FirstOrDefaultAsync(v => v.VendaId == vendaId);
+
+            if (venda is null)
+                return false;
+
+            _context.Vendas.Remove(venda);
+
+            var linhasAfetadas = await _context.SaveChangesAsync();
+            return linhasAfetadas > 0;
         }
     }
 }
