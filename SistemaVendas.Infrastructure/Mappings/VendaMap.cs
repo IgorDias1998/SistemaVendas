@@ -20,7 +20,8 @@ namespace SistemaVendas.Infrastructure.Mappings
             builder.Property(v => v.ValorTotal)
                 .HasColumnType("decimal(18,2)");
 
-            builder.Property(v => v.Status);
+            builder.Property(v => v.Status)
+                .HasMaxLength(35);
 
             builder.HasOne(v => v.Pessoa)
                 .WithMany()
