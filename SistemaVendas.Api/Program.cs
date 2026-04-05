@@ -32,6 +32,10 @@ builder.Services.AddScoped<IPessoaService, PessoaService>();
 
 builder.Services.AddScoped<IPessoaRepository, PessoaRepository>();
 
+builder.Services.AddScoped<IVendaService, VendaService>();
+
+builder.Services.AddScoped<IVendaRepository, VendaRepository>();
+
 builder.Services.AddHttpClient<ICepService, ViaCepService>();
 
 builder.Services.AddScoped<IProdutoImportService, ProdutoImportService>();
