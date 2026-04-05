@@ -23,30 +23,28 @@ namespace SistemaVendas.Infrastructure.Repositories
 
         public async Task<Delivery?> BuscarPorIdAsync(Guid deliveryId)
         {
-            return await _context.Deliveries
-                .Include(d => d.Pedido)
-                    .ThenInclude(p => p.Cliente)
-                .Include(d => d.ClienteEndereco)
+            return await QueryCompleta()
                 .FirstOrDefaultAsync(d => d.DeliveryId == deliveryId);
+        }
+
+        public async Task<IEnumerable<Delivery>> BuscarPorIdsAsync(IEnumerable<Guid> deliveryIds)
+        {
+            return await QueryCompleta()
+                .Where(d => deliveryIds.Contains(d.DeliveryId))
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<Delivery>> BuscarTodosAsync()
         {
-            return await _context.Deliveries
+            return await QueryCompleta()
                 .AsNoTracking()
-                .Include(d => d.Pedido)
-                    .ThenInclude(p => p.Cliente)
-                .Include(d => d.ClienteEndereco)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Delivery>> BuscarPendentesAsync()
         {
-            return await _context.Deliveries
+            return await QueryCompleta()
                 .AsNoTracking()
-                .Include(d => d.Pedido)
-                    .ThenInclude(p => p.Cliente)
-                .Include(d => d.ClienteEndereco)
                 .Where(d => d.Status == StatusDelivery.Pendente)
                 .ToListAsync();
         }
@@ -55,6 +53,14 @@ namespace SistemaVendas.Infrastructure.Repositories
         {
             _context.Deliveries.Update(delivery);
             await _context.SaveChangesAsync();
+        }
+
+        private IQueryable<Delivery> QueryCompleta()
+        {
+            return _context.Deliveries
+                .Include(d => d.Pedido)
+                    .ThenInclude(p => p!.Cliente)
+                .Include(d => d.ClienteEndereco);
         }
     }
 }

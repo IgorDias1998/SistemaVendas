@@ -6,6 +6,7 @@ namespace SistemaVendas.Application.Interfaces
     {
         Task<Delivery> AdicionarAsync(Delivery delivery);
         Task<Delivery?> BuscarPorIdAsync(Guid deliveryId);
+        Task<IEnumerable<Delivery>> BuscarPorIdsAsync(IEnumerable<Guid> deliveryIds);
         Task<IEnumerable<Delivery>> BuscarTodosAsync();
         Task<IEnumerable<Delivery>> BuscarPendentesAsync();
         Task AtualizarAsync(Delivery delivery);
