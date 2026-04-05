@@ -74,12 +74,51 @@ namespace SistemaVendas.Application.Services
             return rotas.Select(MapearParaResponse).ToList();
         }
 
+        public async Task<IEnumerable<RotaReadDto>> BuscarRotasAsync(Guid usuarioId, string role)
+        {
+            var rotas = role == "Entregador"
+                ? await _rotaRepository.BuscarPorEntregadorIdAsync(usuarioId)
+                : await _rotaRepository.BuscarTodosAsync();
+
+            return rotas.Select(MapearParaResponse).ToList();
+        }
+
+        public async Task<PagedResultDto<RotaReadDto>> BuscarRotasAsync(Guid usuarioId, string role, RotaListQueryDto query)
+        {
+            var rotas = await BuscarRotasAsync(usuarioId, role);
+
+            var filtradas = rotas.AsEnumerable();
+
+            if (query.EntregadorId.HasValue)
+                filtradas = filtradas.Where(r => r.AssociadoAoEntregadorId == query.EntregadorId.Value);
+
+            if (query.Status.HasValue)
+                filtradas = filtradas.Where(r => r.Status == query.Status.Value);
+
+            filtradas = filtradas.OrderByDescending(r => r.CriadoEm).ToList();
+
+            return PaginacaoHelper.AplicarPaginacao(filtradas, query);
+        }
+
         public async Task<RotaReadDto> BuscarRotaPorIdAsync(Guid rotaId)
         {
             var rota = await _rotaRepository.BuscarPorIdAsync(rotaId);
 
             if (rota is null)
                 throw new KeyNotFoundException("Rota nao encontrada.");
+
+            return MapearParaResponse(rota);
+        }
+
+        public async Task<RotaReadDto> BuscarRotaPorIdAsync(Guid rotaId, Guid usuarioId, string role)
+        {
+            var rota = await _rotaRepository.BuscarPorIdAsync(rotaId);
+
+            if (rota is null)
+                throw new KeyNotFoundException("Rota nao encontrada.");
+
+            if (role == "Entregador" && rota.AssociadoAoEntregadorId != usuarioId)
+                throw new UnauthorizedAccessException("O entregador nao pode acessar uma rota que nao pertence a ele.");
 
             return MapearParaResponse(rota);
         }
@@ -160,6 +199,75 @@ namespace SistemaVendas.Application.Services
             return MapearParaResponse(rotaAtualizada);
         }
 
+        public async Task<RotaReadDto> ConcluirParadaAsync(Guid rotaId, Guid paradaRotaId, Guid alteradoPorUsuarioId, string role)
+        {
+            var rota = await _rotaRepository.BuscarPorIdAsync(rotaId);
+
+            if (rota is null)
+                throw new KeyNotFoundException("Rota nao encontrada.");
+
+            if (role == "Entregador" && rota.AssociadoAoEntregadorId != alteradoPorUsuarioId)
+                throw new UnauthorizedAccessException("O entregador nao pode concluir parada de uma rota que nao pertence a ele.");
+
+            if (rota.Status != StatusRota.EmProgresso)
+                throw new InvalidOperationException("Somente rotas em progresso podem ter paradas concluidas.");
+
+            var parada = rota.Paradas.FirstOrDefault(p => p.ParadaRotaId == paradaRotaId);
+
+            if (parada is null)
+                throw new KeyNotFoundException("Parada da rota nao encontrada.");
+
+            parada.Status = StatusParadaRota.Realizado;
+            parada.CompletoEm = DateTime.UtcNow;
+
+            if (parada.Delivery is not null)
+            {
+                parada.Delivery.Status = StatusDelivery.Entregue;
+                parada.Delivery.FinalizadoEm = DateTime.UtcNow;
+                parada.Delivery.MotivoFalha = null;
+                await _deliveryRepository.AtualizarAsync(parada.Delivery);
+            }
+
+            await _rotaRepository.AtualizarAsync(rota);
+            return MapearParaResponse(rota);
+        }
+
+        public async Task<RotaReadDto> RegistrarFalhaParadaAsync(Guid rotaId, Guid paradaRotaId, RegistrarFalhaEntregaDto dto, Guid alteradoPorUsuarioId, string role)
+        {
+            if (string.IsNullOrWhiteSpace(dto.MotivoFalha))
+                throw new ArgumentException("O motivo da falha e obrigatorio.", nameof(dto));
+
+            var rota = await _rotaRepository.BuscarPorIdAsync(rotaId);
+
+            if (rota is null)
+                throw new KeyNotFoundException("Rota nao encontrada.");
+
+            if (role == "Entregador" && rota.AssociadoAoEntregadorId != alteradoPorUsuarioId)
+                throw new UnauthorizedAccessException("O entregador nao pode registrar falha de uma rota que nao pertence a ele.");
+
+            if (rota.Status != StatusRota.EmProgresso)
+                throw new InvalidOperationException("Somente rotas em progresso podem registrar falha de entrega.");
+
+            var parada = rota.Paradas.FirstOrDefault(p => p.ParadaRotaId == paradaRotaId);
+
+            if (parada is null)
+                throw new KeyNotFoundException("Parada da rota nao encontrada.");
+
+            parada.Status = StatusParadaRota.PulouPedido;
+            parada.CompletoEm = DateTime.UtcNow;
+
+            if (parada.Delivery is not null)
+            {
+                parada.Delivery.Status = StatusDelivery.Falhou;
+                parada.Delivery.MotivoFalha = dto.MotivoFalha.Trim();
+                parada.Delivery.FinalizadoEm = DateTime.UtcNow;
+                await _deliveryRepository.AtualizarAsync(parada.Delivery);
+            }
+
+            await _rotaRepository.AtualizarAsync(rota);
+            return MapearParaResponse(rota);
+        }
+
         public async Task<RotaReadDto> IniciarRotaAsync(Guid rotaId, Guid alteradoPorUsuarioId)
         {
             var rota = await _rotaRepository.BuscarPorIdAsync(rotaId);
@@ -200,6 +308,19 @@ namespace SistemaVendas.Application.Services
             return MapearParaResponse(rota);
         }
 
+        public async Task<RotaReadDto> IniciarRotaAsync(Guid rotaId, Guid alteradoPorUsuarioId, string role)
+        {
+            var rota = await _rotaRepository.BuscarPorIdAsync(rotaId);
+
+            if (rota is null)
+                throw new KeyNotFoundException("Rota nao encontrada.");
+
+            if (role == "Entregador" && rota.AssociadoAoEntregadorId != alteradoPorUsuarioId)
+                throw new UnauthorizedAccessException("O entregador nao pode iniciar uma rota que nao pertence a ele.");
+
+            return await IniciarRotaAsync(rotaId, alteradoPorUsuarioId);
+        }
+
         public async Task<RotaReadDto> FinalizarRotaAsync(Guid rotaId, Guid alteradoPorUsuarioId)
         {
             var rota = await _rotaRepository.BuscarPorIdAsync(rotaId);
@@ -226,6 +347,43 @@ namespace SistemaVendas.Application.Services
             });
 
             return MapearParaResponse(rota);
+        }
+
+        public async Task<RotaReadDto> FinalizarRotaAsync(Guid rotaId, Guid alteradoPorUsuarioId, string role)
+        {
+            var rota = await _rotaRepository.BuscarPorIdAsync(rotaId);
+
+            if (rota is null)
+                throw new KeyNotFoundException("Rota nao encontrada.");
+
+            if (role == "Entregador" && rota.AssociadoAoEntregadorId != alteradoPorUsuarioId)
+                throw new UnauthorizedAccessException("O entregador nao pode finalizar uma rota que nao pertence a ele.");
+
+            return await FinalizarRotaAsync(rotaId, alteradoPorUsuarioId);
+        }
+
+        public async Task<IEnumerable<LogMudancaRotaReadDto>> BuscarLogsAsync(Guid rotaId, Guid usuarioId, string role)
+        {
+            var rota = await _rotaRepository.BuscarPorIdAsync(rotaId);
+
+            if (rota is null)
+                throw new KeyNotFoundException("Rota nao encontrada.");
+
+            if (role == "Entregador" && rota.AssociadoAoEntregadorId != usuarioId)
+                throw new UnauthorizedAccessException("O entregador nao pode acessar logs de uma rota que nao pertence a ele.");
+
+            var logs = await _logRepository.BuscarPorRotaAsync(rotaId);
+
+            return logs.Select(log => new LogMudancaRotaReadDto
+            {
+                LogMudancaRotaId = log.LogMudancaRotaId,
+                RotaId = log.RotaId,
+                AlteradoPeloUsuarioId = log.AlteradoPeloUsuarioId,
+                MudouEm = log.MudouEm,
+                TipoMudanca = log.TipoMudanca,
+                OldValue = log.OldValue,
+                NewValue = log.NewValue
+            }).ToList();
         }
 
         private async Task<Rota> ObterRotaEditavelAsync(Guid rotaId)
@@ -273,6 +431,7 @@ namespace SistemaVendas.Application.Services
                         DeliveryId = parada.DeliveryId,
                         StopOrder = parada.StopOrder,
                         Status = parada.Status,
+                        CompletoEm = parada.CompletoEm,
                         ClienteNome = parada.Delivery?.Pedido?.Cliente?.Nome ?? string.Empty,
                         EnderecoResumo = $"{parada.Delivery?.ClienteEndereco?.Logradouro}, {parada.Delivery?.ClienteEndereco?.Numero} - {parada.Delivery?.ClienteEndereco?.Bairro}"
                     })

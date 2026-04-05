@@ -36,9 +36,20 @@ namespace SistemaVendas.Api.Controllers
         /// Lista as rotas cadastradas.
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult> BuscarRotas()
+        public async Task<ActionResult> BuscarRotas([FromQuery] RotaListQueryDto query)
         {
-            var rotas = await _rotaService.BuscarRotasAsync();
+            var rotas = await _rotaService.BuscarRotasAsync(User.GetRequiredUserId(), User.GetRequiredUserRole(), query);
+            return Ok(rotas);
+        }
+
+        /// <summary>
+        /// Lista as rotas do entregador autenticado.
+        /// </summary>
+        [Authorize(Roles = "Entregador")]
+        [HttpGet("minhas")]
+        public async Task<ActionResult> BuscarMinhasRotas()
+        {
+            var rotas = await _rotaService.BuscarRotasAsync(User.GetRequiredUserId(), User.GetRequiredUserRole());
             return Ok(rotas);
         }
 
@@ -48,8 +59,18 @@ namespace SistemaVendas.Api.Controllers
         [HttpGet("{id:guid}")]
         public async Task<ActionResult> BuscarPorId(Guid id)
         {
-            var rota = await _rotaService.BuscarRotaPorIdAsync(id);
+            var rota = await _rotaService.BuscarRotaPorIdAsync(id, User.GetRequiredUserId(), User.GetRequiredUserRole());
             return Ok(rota);
+        }
+
+        /// <summary>
+        /// Lista os logs de auditoria de uma rota.
+        /// </summary>
+        [HttpGet("{id:guid}/logs")]
+        public async Task<ActionResult> BuscarLogs(Guid id)
+        {
+            var logs = await _rotaService.BuscarLogsAsync(id, User.GetRequiredUserId(), User.GetRequiredUserRole());
+            return Ok(logs);
         }
 
         /// <summary>
@@ -75,13 +96,35 @@ namespace SistemaVendas.Api.Controllers
         }
 
         /// <summary>
+        /// Marca uma parada como concluida e a delivery como entregue.
+        /// </summary>
+        [Authorize(Roles = "Admin,Operador,Entregador")]
+        [HttpPut("{id:guid}/paradas/{paradaId:guid}/concluir")]
+        public async Task<ActionResult> ConcluirParada(Guid id, Guid paradaId)
+        {
+            var rota = await _rotaService.ConcluirParadaAsync(id, paradaId, User.GetRequiredUserId(), User.GetRequiredUserRole());
+            return Ok(rota);
+        }
+
+        /// <summary>
+        /// Registra falha da entrega vinculada a parada.
+        /// </summary>
+        [Authorize(Roles = "Admin,Operador,Entregador")]
+        [HttpPut("{id:guid}/paradas/{paradaId:guid}/falha")]
+        public async Task<ActionResult> RegistrarFalhaParada(Guid id, Guid paradaId, [FromBody] RegistrarFalhaEntregaDto dto)
+        {
+            var rota = await _rotaService.RegistrarFalhaParadaAsync(id, paradaId, dto, User.GetRequiredUserId(), User.GetRequiredUserRole());
+            return Ok(rota);
+        }
+
+        /// <summary>
         /// Inicia uma rota atribuida.
         /// </summary>
         [Authorize(Roles = "Admin,Operador,Entregador")]
         [HttpPut("{id:guid}/iniciar")]
         public async Task<ActionResult> Iniciar(Guid id)
         {
-            var rota = await _rotaService.IniciarRotaAsync(id, User.GetRequiredUserId());
+            var rota = await _rotaService.IniciarRotaAsync(id, User.GetRequiredUserId(), User.GetRequiredUserRole());
             return Ok(rota);
         }
 
@@ -92,7 +135,7 @@ namespace SistemaVendas.Api.Controllers
         [HttpPut("{id:guid}/finalizar")]
         public async Task<ActionResult> Finalizar(Guid id)
         {
-            var rota = await _rotaService.FinalizarRotaAsync(id, User.GetRequiredUserId());
+            var rota = await _rotaService.FinalizarRotaAsync(id, User.GetRequiredUserId(), User.GetRequiredUserRole());
             return Ok(rota);
         }
     }

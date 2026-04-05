@@ -8,6 +8,7 @@ namespace SistemaVendas.Application.DTOs
         public Guid DeliveryId { get; set; }
         public int StopOrder { get; set; }
         public StatusParadaRota Status { get; set; }
+        public DateTime? CompletoEm { get; set; }
         public string ClienteNome { get; set; } = string.Empty;
         public string EnderecoResumo { get; set; } = string.Empty;
     }

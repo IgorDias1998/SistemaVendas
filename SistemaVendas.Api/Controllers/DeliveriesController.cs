@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SistemaVendas.Api.Extensions;
 using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
 
@@ -24,9 +25,9 @@ namespace SistemaVendas.Api.Controllers
         /// Lista todas as deliveries.
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult> BuscarDeliveries()
+        public async Task<ActionResult> BuscarDeliveries([FromQuery] DeliveryListQueryDto query)
         {
-            var deliveries = await _deliveryService.BuscarDeliveriesAsync();
+            var deliveries = await _deliveryService.BuscarDeliveriesAsync(User.GetRequiredUserId(), User.GetRequiredUserRole(), query);
             return Ok(deliveries);
         }
 
@@ -36,7 +37,18 @@ namespace SistemaVendas.Api.Controllers
         [HttpGet("pendentes")]
         public async Task<ActionResult> BuscarPendentes()
         {
-            var deliveries = await _deliveryService.BuscarDeliveriesPendentesAsync();
+            var deliveries = await _deliveryService.BuscarDeliveriesPendentesAsync(User.GetRequiredUserId(), User.GetRequiredUserRole());
+            return Ok(deliveries);
+        }
+
+        /// <summary>
+        /// Lista as deliveries relacionadas ao entregador autenticado.
+        /// </summary>
+        [Authorize(Roles = "Entregador")]
+        [HttpGet("minhas")]
+        public async Task<ActionResult> BuscarMinhasDeliveries()
+        {
+            var deliveries = await _deliveryService.BuscarDeliveriesAsync(User.GetRequiredUserId(), User.GetRequiredUserRole());
             return Ok(deliveries);
         }
 
@@ -46,7 +58,7 @@ namespace SistemaVendas.Api.Controllers
         [HttpGet("{id:guid}")]
         public async Task<ActionResult> BuscarPorId(Guid id)
         {
-            var delivery = await _deliveryService.BuscarDeliveryPorIdAsync(id);
+            var delivery = await _deliveryService.BuscarDeliveryPorIdAsync(id, User.GetRequiredUserId(), User.GetRequiredUserRole());
             return Ok(delivery);
         }
 
@@ -56,7 +68,17 @@ namespace SistemaVendas.Api.Controllers
         [HttpPut("{id:guid}/status")]
         public async Task<ActionResult> AtualizarStatus(Guid id, [FromBody] DeliveryAtualizarStatusDto dto)
         {
-            var delivery = await _deliveryService.AtualizarStatusAsync(id, dto);
+            var delivery = await _deliveryService.AtualizarStatusAsync(id, dto, User.GetRequiredUserId(), User.GetRequiredUserRole());
+            return Ok(delivery);
+        }
+
+        /// <summary>
+        /// Registra falha de uma entrega com motivo.
+        /// </summary>
+        [HttpPut("{id:guid}/falha")]
+        public async Task<ActionResult> RegistrarFalha(Guid id, [FromBody] RegistrarFalhaEntregaDto dto)
+        {
+            var delivery = await _deliveryService.RegistrarFalhaAsync(id, dto, User.GetRequiredUserId(), User.GetRequiredUserRole());
             return Ok(delivery);
         }
     }

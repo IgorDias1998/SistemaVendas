@@ -6,6 +6,7 @@ namespace SistemaVendas.Application.Interfaces
     {
         Task<ClienteReadDto> CriarClienteAsync(ClienteCreateDto dto);
         Task<IEnumerable<ClienteReadDto>> BuscarClientesAsync();
+        Task<PagedResultDto<ClienteReadDto>> BuscarClientesAsync(ClienteListQueryDto query);
         Task<ClienteReadDto> BuscarClientePorIdAsync(Guid id);
         Task<ClienteReadDto> AtualizarClienteAsync(Guid id, ClienteAtualizarDto clienteAtualizarDto);
         Task DeletarClienteAsync(Guid id);

@@ -17,7 +17,10 @@ namespace SistemaVendas.Domain.Entities
         public Guid ClienteEnderecoId { get; set; }
         public StatusDelivery Status { get; set; } = StatusDelivery.Pendente;
         public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
+        public DateTime? FinalizadoEm { get; set; }
+        public string? MotivoFalha { get; set; }
         public Pedido? Pedido { get; set; }
         public ClienteEndereco? ClienteEndereco { get; set; }
+        public ICollection<ParadaRota> ParadasRota { get; set; } = new List<ParadaRota>();
     }
 }

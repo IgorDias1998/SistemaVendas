@@ -35,9 +35,9 @@ namespace SistemaVendas.Api.Controllers
         /// Lista os pedidos cadastrados.
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult> BuscarPedidos()
+        public async Task<ActionResult> BuscarPedidos([FromQuery] PedidoListQueryDto query)
         {
-            var pedidos = await _pedidoService.BuscarPedidosAsync();
+            var pedidos = await _pedidoService.BuscarPedidosAsync(query);
             return Ok(pedidos);
         }
 

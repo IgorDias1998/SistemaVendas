@@ -9,6 +9,8 @@ namespace SistemaVendas.Application.DTOs
         public Guid ClienteEnderecoId { get; set; }
         public StatusDelivery Status { get; set; }
         public DateTime CriadoEm { get; set; }
+        public DateTime? FinalizadoEm { get; set; }
+        public string? MotivoFalha { get; set; }
         public string ClienteNome { get; set; } = string.Empty;
         public string Logradouro { get; set; } = string.Empty;
         public string Numero { get; set; } = string.Empty;

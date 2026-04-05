@@ -101,6 +101,7 @@ builder.Services.AddScoped<IDeliveryService, DeliveryService>();
 builder.Services.AddScoped<IRotaRepository, RotaRepository>();
 builder.Services.AddScoped<IRotaService, RotaService>();
 builder.Services.AddScoped<ILogMudancaRotaRepository, LogMudancaRotaRepository>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();

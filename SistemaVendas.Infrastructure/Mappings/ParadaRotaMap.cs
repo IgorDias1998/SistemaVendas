@@ -20,7 +20,7 @@ namespace SistemaVendas.Infrastructure.Mappings
                 .IsRequired();
 
             builder.HasOne(p => p.Delivery)
-                .WithMany()
+                .WithMany(d => d.ParadasRota)
                 .HasForeignKey(p => p.DeliveryId)
                 .OnDelete(DeleteBehavior.Restrict);
         }

@@ -43,6 +43,21 @@ namespace SistemaVendas.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Rota>> BuscarPorEntregadorIdAsync(Guid entregadorId)
+        {
+            return await _context.Rotas
+                .AsNoTracking()
+                .Where(r => r.AssociadoAoEntregadorId == entregadorId)
+                .Include(r => r.Paradas.OrderBy(p => p.StopOrder))
+                    .ThenInclude(p => p.Delivery)
+                        .ThenInclude(d => d.Pedido)
+                            .ThenInclude(p => p!.Cliente)
+                .Include(r => r.Paradas)
+                    .ThenInclude(p => p.Delivery)
+                        .ThenInclude(d => d.ClienteEndereco)
+                .ToListAsync();
+        }
+
         public async Task AtualizarAsync(Rota rota)
         {
             _context.Rotas.Update(rota);

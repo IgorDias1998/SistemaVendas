@@ -32,6 +32,28 @@ namespace SistemaVendas.Application.Services
             return clientes.Select(MapearParaResponse).ToList();
         }
 
+        public async Task<PagedResultDto<ClienteReadDto>> BuscarClientesAsync(ClienteListQueryDto query)
+        {
+            var clientes = (await _repository.BuscarClientesAsync())
+                .Select(MapearParaResponse);
+
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                var search = query.Search.Trim().ToLowerInvariant();
+                clientes = clientes.Where(c =>
+                    c.Nome.ToLowerInvariant().Contains(search) ||
+                    c.Documento.ToLowerInvariant().Contains(search) ||
+                    c.Telefone.ToLowerInvariant().Contains(search));
+            }
+
+            if (query.EstaAtivo.HasValue)
+                clientes = clientes.Where(c => c.EstaAtivo == query.EstaAtivo.Value);
+
+            clientes = clientes.OrderBy(c => c.Nome).ToList();
+
+            return PaginacaoHelper.AplicarPaginacao(clientes, query);
+        }
+
         public async Task<ClienteReadDto> CriarClienteAsync(ClienteCreateDto dto)
         {
             var cep = Regex.Replace(dto.Cep ?? string.Empty, "\\D", string.Empty);

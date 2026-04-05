@@ -27,9 +27,9 @@ namespace SistemaVendas.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> BuscarTodosProdutos()
+        public async Task<ActionResult> BuscarTodosProdutos([FromQuery] ProdutoListQueryDto query)
         {
-            var produtos = await _produtoService.BuscarProdutosAsync();
+            var produtos = await _produtoService.BuscarProdutosAsync(query);
             return Ok(produtos);
         }
 

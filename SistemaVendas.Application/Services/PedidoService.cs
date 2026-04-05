@@ -79,6 +79,25 @@ namespace SistemaVendas.Application.Services
             return pedidos.Select(MapearParaResponse).ToList();
         }
 
+        public async Task<PagedResultDto<PedidoReadDto>> BuscarPedidosAsync(PedidoListQueryDto query)
+        {
+            var pedidos = (await _pedidoRepository.BuscarTodosAsync())
+                .Select(MapearParaResponse);
+
+            if (query.ClienteId.HasValue)
+                pedidos = pedidos.Where(p => p.ClienteId == query.ClienteId.Value);
+
+            if (query.Tipo.HasValue)
+                pedidos = pedidos.Where(p => p.Tipo == query.Tipo.Value);
+
+            if (query.Status.HasValue)
+                pedidos = pedidos.Where(p => p.Status == query.Status.Value);
+
+            pedidos = pedidos.OrderByDescending(p => p.CriadoEm).ToList();
+
+            return PaginacaoHelper.AplicarPaginacao(pedidos, query);
+        }
+
         public async Task<PedidoReadDto> BuscarPedidoPorIdAsync(Guid pedidoId)
         {
             var pedido = await _pedidoRepository.BuscarPorIdAsync(pedidoId);

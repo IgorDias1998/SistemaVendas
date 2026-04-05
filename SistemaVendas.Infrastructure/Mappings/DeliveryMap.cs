@@ -19,6 +19,9 @@ namespace SistemaVendas.Infrastructure.Mappings
             builder.Property(d => d.CriadoEm)
                 .IsRequired();
 
+            builder.Property(d => d.MotivoFalha)
+                .HasMaxLength(500);
+
             builder.HasIndex(d => d.PedidoId)
                 .IsUnique();
 

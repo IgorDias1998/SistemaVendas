@@ -6,6 +6,7 @@ namespace SistemaVendas.Application.Interfaces
     {
         Task<ProdutoResponseDto> CriarProdutoAsync(ProdutoCriarDto produtoDto);
         Task<IEnumerable<ProdutoResponseDto>> BuscarProdutosAsync();
+        Task<PagedResultDto<ProdutoResponseDto>> BuscarProdutosAsync(ProdutoListQueryDto query);
         Task<ProdutoResponseDto?> BuscarProdutoPorIdAsync(Guid produtoDtoId);
         Task<ProdutoResponseDto> AtualizarProdutoAsync(Guid id, ProdutoAtualizarDto produtoDto);
         Task DeletarProdutoAsync(Guid id);

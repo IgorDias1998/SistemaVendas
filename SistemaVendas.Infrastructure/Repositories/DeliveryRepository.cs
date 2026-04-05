@@ -49,6 +49,30 @@ namespace SistemaVendas.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Delivery>> BuscarPorEntregadorIdAsync(Guid entregadorId)
+        {
+            return await QueryCompleta()
+                .AsNoTracking()
+                .Where(d => d.ParadasRota.Any(p => p.Rota!.AssociadoAoEntregadorId == entregadorId))
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Delivery>> BuscarPendentesPorEntregadorIdAsync(Guid entregadorId)
+        {
+            var statuses = new[] { StatusDelivery.Pendente, StatusDelivery.Associado, StatusDelivery.EmRota };
+
+            return await QueryCompleta()
+                .AsNoTracking()
+                .Where(d => statuses.Contains(d.Status) && d.ParadasRota.Any(p => p.Rota!.AssociadoAoEntregadorId == entregadorId))
+                .ToListAsync();
+        }
+
+        public async Task<bool> PertenceAoEntregadorAsync(Guid deliveryId, Guid entregadorId)
+        {
+            return await _context.ParadasRota
+                .AnyAsync(p => p.DeliveryId == deliveryId && p.Rota!.AssociadoAoEntregadorId == entregadorId);
+        }
+
         public async Task AtualizarAsync(Delivery delivery)
         {
             _context.Deliveries.Update(delivery);
@@ -60,7 +84,9 @@ namespace SistemaVendas.Infrastructure.Repositories
             return _context.Deliveries
                 .Include(d => d.Pedido)
                     .ThenInclude(p => p!.Cliente)
-                .Include(d => d.ClienteEndereco);
+                .Include(d => d.ClienteEndereco)
+                .Include(d => d.ParadasRota)
+                    .ThenInclude(p => p.Rota);
         }
     }
 }

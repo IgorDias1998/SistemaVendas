@@ -30,6 +30,26 @@ namespace SistemaVendas.Application.Services
             return produtos.Select(MapearParaResponse).ToList();
         }
 
+        public async Task<PagedResultDto<ProdutoResponseDto>> BuscarProdutosAsync(ProdutoListQueryDto query)
+        {
+            var produtos = (await _repository.BuscarProdutosAsync())
+                .Select(MapearParaResponse);
+
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                var search = query.Search.Trim().ToLowerInvariant();
+                produtos = produtos.Where(p =>
+                    p.TituloProduto.ToLowerInvariant().Contains(search) ||
+                    p.CodigoProduto.ToLowerInvariant().Contains(search));
+            }
+
+            produtos = produtos
+                .OrderBy(p => p.TituloProduto)
+                .ToList();
+
+            return PaginacaoHelper.AplicarPaginacao(produtos, query);
+        }
+
         public async Task<ProdutoResponseDto> CriarProdutoAsync(ProdutoCriarDto produtoDto)
         {
             var produto = new Produto(

@@ -25,9 +25,9 @@ namespace SistemaVendas.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> BuscarClientesAsync()
+        public async Task<ActionResult> BuscarClientesAsync([FromQuery] ClienteListQueryDto query)
         {
-            var clientes = await _clienteService.BuscarClientesAsync();
+            var clientes = await _clienteService.BuscarClientesAsync(query);
             return Ok(clientes);
         }
 
