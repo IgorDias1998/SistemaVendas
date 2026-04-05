@@ -1,6 +1,7 @@
 using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SistemaVendas.Application.DTOs;
@@ -14,10 +15,7 @@ using SistemaVendas.Infrastructure.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -26,7 +24,6 @@ var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SistemaVendas";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SistemaVendasClient";
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "SistemaVendas-Secret-Key-Dev-1234567890";
 
-// registra o DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString)
 );
@@ -49,25 +46,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IProdutoService, ProdutoService>();
-
 builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
 
-builder.Services.AddScoped<IPessoaService, PessoaService>();
-
-builder.Services.AddScoped<IPessoaRepository, PessoaRepository>();
+builder.Services.AddScoped<IClienteService, ClienteService>();
+builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 
 builder.Services.AddScoped<IVendaService, VendaService>();
-
 builder.Services.AddScoped<IVendaRepository, VendaRepository>();
 
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
-
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
-
 builder.Services.AddScoped<IPasswordHasher, PasswordHasherService>();
-
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 
 builder.Services.AddHttpClient<ICepService, ViaCepService>();
@@ -75,10 +66,37 @@ builder.Services.AddHttpClient<ICepService, ViaCepService>();
 builder.Services.AddScoped<IProdutoImportService, ProdutoImportService>();
 
 builder.Services.AddScoped<IValidator<ProdutoCriarDto>, ProdutoValidator>();
+builder.Services.AddScoped<IValidator<ClienteCreateDto>, ClienteCreateValidator>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseExceptionHandler(handler =>
+{
+    handler.Run(async context =>
+    {
+        var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+
+        var (statusCode, title) = exception switch
+        {
+            ArgumentException => (StatusCodes.Status400BadRequest, "Erro de validação"),
+            InvalidOperationException => (StatusCodes.Status400BadRequest, "Operação inválida"),
+            KeyNotFoundException => (StatusCodes.Status404NotFound, "Recurso não encontrado"),
+            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Não autorizado"),
+            _ => (StatusCodes.Status500InternalServerError, "Erro interno")
+        };
+
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+
+        await context.Response.WriteAsJsonAsync(new
+        {
+            title,
+            detail = exception?.Message,
+            status = statusCode
+        });
+    });
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -86,11 +104,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthentication();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

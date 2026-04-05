@@ -40,7 +40,7 @@ namespace SistemaVendas.Infrastructure.Repositories
         {
             return await _context.Vendas
                 .AsNoTracking()
-                .Include(v => v.Pessoa)
+                .Include(v => v.Cliente)
                 .Include(v => v.ItensVenda)
                     .ThenInclude(iv => iv.Produto)
                 .FirstOrDefaultAsync(v => v.VendaId == vendaId);
@@ -50,7 +50,7 @@ namespace SistemaVendas.Infrastructure.Repositories
         {
             return await _context.Vendas
                 .AsNoTracking()
-                .Include(v => v.Pessoa)
+                .Include(v => v.Cliente)
                 .Include(v => v.ItensVenda)
                     .ThenInclude(iv => iv.Produto)
                 .ToListAsync();

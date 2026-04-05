@@ -4,41 +4,41 @@ using SistemaVendas.Domain.Entities;
 
 namespace SistemaVendas.Infrastructure.Mappings
 {
-    public class PessoaMap : IEntityTypeConfiguration<Pessoa>
+    public class ClienteMap : IEntityTypeConfiguration<Cliente>
     {
-        public void Configure(EntityTypeBuilder<Pessoa> builder)
+        public void Configure(EntityTypeBuilder<Cliente> builder)
         {
-            builder.ToTable("Pessoas");
+            builder.ToTable("Clientes");
 
-            builder.HasKey(p => p.PessoaId);
+            builder.HasKey(c => c.ClienteId);
 
-            builder.Property(p => p.NomePessoa)
+            builder.Property(c => c.Nome)
                 .IsRequired()
                 .HasMaxLength(200);
 
-            builder.Property(p => p.EmailPessoa)
+            builder.Property(c => c.Telefone)
                 .IsRequired()
-                .HasMaxLength(200);
-
-            builder.Property(p => p.TelefonePessoa)
                 .HasMaxLength(20);
 
-            builder.Property(p => p.DocumentoPessoa)
-                .HasMaxLength(50);
+            builder.Property(c => c.Documento)
+                .HasMaxLength(20);
 
-            builder.Property(p => p.DataNascimento)
+            builder.Property(c => c.EstaAtivo)
+                .HasDefaultValue(true);
+
+            builder.Property(c => c.CriadoEm)
                 .IsRequired();
 
-            builder.HasIndex(p => p.DocumentoPessoa)
-                .IsUnique();
+            builder.Property(c => c.AlteradoEm)
+                .IsRequired();
 
-            builder.HasIndex(p => p.EmailPessoa)
-                .IsUnique();
+            builder.HasIndex(c => c.Documento)
+                .IsUnique()
+                .HasFilter("[Documento] IS NOT NULL AND [Documento] <> ''");
 
-            // 1:1 Pessoa -> Endereco, FK stored on Pessoa.EnderecoId
-            builder.HasOne(p => p.EnderecoPessoa)
-                .WithOne()
-                .HasForeignKey<Pessoa>(p => p.EnderecoId)
+            builder.HasMany(c => c.Enderecos)
+                .WithOne(e => e.Cliente)
+                .HasForeignKey(e => e.ClienteId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

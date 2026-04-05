@@ -55,9 +55,9 @@ namespace SistemaVendas.Application.Services
 
             var venda = new Venda
             {
-                PessoaId = vendaDto.PessoaId,
+                ClienteId = vendaDto.ClienteId,
                 DataVenda = vendaDto.DataVenda ?? DateTime.UtcNow,
-                Status = NormalizarStatus(vendaDto.Status),
+                Status = vendaDto.Status,
                 ValorTotal = valorTotalVenda,
                 ItensVenda = itensVenda
             };
@@ -94,9 +94,9 @@ namespace SistemaVendas.Application.Services
             if (venda is null)
                 throw new KeyNotFoundException("Venda não encontrada.");
 
-            venda.PessoaId = vendaDto.PessoaId;
+            venda.ClienteId = vendaDto.ClienteId;
             venda.DataVenda = vendaDto.DataVenda ?? venda.DataVenda;
-            venda.Status = NormalizarStatus(vendaDto.Status);
+            venda.Status = vendaDto.Status;
 
             var atualizou = await _vendaRepository.AtualizarVendaAsync(venda);
 
@@ -132,20 +132,12 @@ namespace SistemaVendas.Application.Services
                 throw new InvalidOperationException("Não foi possível remover a venda.");
         }
 
-        private static string NormalizarStatus(string status)
-        {
-            if (string.IsNullOrWhiteSpace(status))
-                return "Pendente";
-
-            return status.Trim();
-        }
-
         private static VendaReadDto MapearParaResponse(Venda venda)
         {
             return new VendaReadDto
             {
                 VendaId = venda.VendaId,
-                PessoaId = venda.PessoaId,
+                ClienteId = venda.ClienteId,
                 DataVenda = venda.DataVenda,
                 ValorTotal = venda.ValorTotal,
                 Status = venda.Status,

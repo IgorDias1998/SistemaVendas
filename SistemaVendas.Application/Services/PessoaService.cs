@@ -1,49 +1,45 @@
-﻿using SistemaVendas.Application.DTOs;
+using System.Text.RegularExpressions;
+using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Domain.Entities;
 
 namespace SistemaVendas.Application.Services
 {
-    public class PessoaService : IPessoaService
+    public class ClienteService : IClienteService
     {
-        private readonly IPessoaRepository _repository;
+        private readonly IClienteRepository _repository;
         private readonly ICepService _cepService;
 
-        public PessoaService(IPessoaRepository repository, ICepService cepService)
+        public ClienteService(IClienteRepository repository, ICepService cepService)
         {
             _repository = repository;
             _cepService = cepService;
         }
 
-        public async Task<PessoaReadDto> BuscarPessoaIdAsync(Guid id)
+        public async Task<ClienteReadDto> BuscarClientePorIdAsync(Guid id)
         {
-            var pessoa = await _repository.BuscarPessoaIdAsync(id);
+            var cliente = await _repository.BuscarClientePorIdAsync(id);
 
-            if (pessoa is null)
-                throw new Exception("Cadastro de pessoa não encontrado no sistema.");
+            if (cliente is null)
+                throw new KeyNotFoundException("Cliente não encontrado.");
 
-            return MapearParaResponse(pessoa);
+            return MapearParaResponse(cliente);
         }
 
-        public async Task<IEnumerable<PessoaReadDto>> BuscarPessoasAsync()
+        public async Task<IEnumerable<ClienteReadDto>> BuscarClientesAsync()
         {
-            var pessoas = await _repository.BuscarPessoasAsync();
-
-            if (pessoas is null)
-                throw new Exception("Cadastros de pessoas não encontrados.");
-
-            return pessoas.Select(MapearParaResponse).ToList();
+            var clientes = await _repository.BuscarClientesAsync();
+            return clientes.Select(MapearParaResponse).ToList();
         }
 
-        public async Task CriarPessoaAsync(PessoaCreateDto dto)
+        public async Task<ClienteReadDto> CriarClienteAsync(ClienteCreateDto dto)
         {
-            var cep = System.Text.RegularExpressions.Regex.Replace(dto.Cep ?? string.Empty, "\\D", string.Empty);
-
+            var cep = Regex.Replace(dto.Cep ?? string.Empty, "\\D", string.Empty);
             var cepResult = await _cepService.BuscarCepAsync(cep);
 
-            var endereco = new Endereco
+            var endereco = new ClienteEndereco
             {
-                EnderecoId = Guid.NewGuid(),
+                ClienteEnderecoId = Guid.NewGuid(),
                 Cep = cepResult.Cep,
                 Logradouro = cepResult.Logradouro,
                 Bairro = cepResult.Bairro,
@@ -53,74 +49,80 @@ namespace SistemaVendas.Application.Services
                 Complemento = dto.Complemento
             };
 
-            var pessoa = new Pessoa
+            var cliente = new Cliente(dto.Nome, dto.Telefone, dto.Documento);
+            cliente.DefinirEnderecos(new[] { endereco });
+
+            var clienteSalvo = await _repository.CriarClienteAsync(cliente);
+            return MapearParaResponse(clienteSalvo);
+        }
+
+        public async Task<ClienteReadDto> AtualizarClienteAsync(Guid id, ClienteAtualizarDto clienteAtualizarDto)
+        {
+            var cliente = await _repository.BuscarClientePorIdAsync(id);
+
+            if (cliente is null)
+                throw new KeyNotFoundException("Cliente não encontrado.");
+
+            cliente.AtualizarDados(clienteAtualizarDto.Nome, clienteAtualizarDto.Telefone, clienteAtualizarDto.Documento);
+
+            var dadosCep = await _cepService.BuscarCepAsync(clienteAtualizarDto.Cep);
+            var endereco = cliente.Enderecos.FirstOrDefault();
+
+            if (endereco is null)
             {
-                PessoaId = Guid.NewGuid(),
-                NomePessoa = dto.NomePessoa,
-                EmailPessoa = dto.EmailPessoa,
-                DataNascimento = dto.DataNascimento,
-                TelefonePessoa = dto.TelefonePessoa,
-                DocumentoPessoa = dto.DocumentoPessoa,
-                EnderecoId = endereco.EnderecoId,
-                EnderecoPessoa = endereco
-            };
+                endereco = new ClienteEndereco
+                {
+                    ClienteEnderecoId = Guid.NewGuid(),
+                    ClienteId = cliente.ClienteId
+                };
+                cliente.DefinirEnderecos(new[] { endereco });
+            }
 
-            await _repository.CriarPessoaAsync(pessoa);
+            endereco.Cep = dadosCep.Cep;
+            endereco.Numero = clienteAtualizarDto.Numero;
+            endereco.Complemento = clienteAtualizarDto.Complemento;
+            endereco.Logradouro = dadosCep.Logradouro;
+            endereco.Bairro = dadosCep.Bairro;
+            endereco.Cidade = dadosCep.Cidade;
+            endereco.Estado = dadosCep.Estado;
+
+            await _repository.AtualizarClienteAsync(cliente);
+
+            return MapearParaResponse(cliente);
         }
 
-        public async Task AtualizarPessoaAsync(Guid id, PessoaAtualizarDto pessoaAtualizarDto)
+        public async Task DeletarClienteAsync(Guid id)
         {
-            var pessoa = await _repository.BuscarPessoaIdAsync(id);
+            var cliente = await _repository.BuscarClientePorIdAsync(id);
 
-            if (pessoa is null)
-                throw new Exception("cadastro de pessoa não encontrado.");
+            if (cliente is null)
+                throw new KeyNotFoundException("Cliente não encontrado.");
 
-            //Atualizar dados da pessoa
-            pessoa.NomePessoa = pessoaAtualizarDto.NomePessoa;
-            pessoa.EmailPessoa = pessoaAtualizarDto.EmailPessoa;
-            pessoa.DataNascimento = pessoaAtualizarDto.DataNascimento;
-            pessoa.TelefonePessoa = pessoaAtualizarDto.TelefonePessoa;
-            pessoa.DocumentoPessoa = pessoaAtualizarDto.DocumentoPessoa;
-
-            // Busca dados do CEP na API externa
-            var dadosCep = await _cepService.BuscarCepAsync(pessoaAtualizarDto.Cep);
-
-            if (dadosCep is null)
-                throw new Exception("CEP inválido ou não encontrado.");
-
-            // Atualiza o endereço da pessoa
-            pessoa.EnderecoPessoa.Cep = pessoaAtualizarDto.Cep;
-            pessoa.EnderecoPessoa.Numero = pessoaAtualizarDto.Numero;
-            pessoa.EnderecoPessoa.Complemento = pessoaAtualizarDto.Complemento;
-            pessoa.EnderecoPessoa.Logradouro = dadosCep.Logradouro;
-            pessoa.EnderecoPessoa.Bairro = dadosCep.Bairro;
-            pessoa.EnderecoPessoa.Cidade = dadosCep.Cidade;
-            pessoa.EnderecoPessoa.Estado = dadosCep.Estado;
-
-            await _repository.AtualizarPessoaAsync(id, pessoa);
+            await _repository.DeletarClienteAsync(cliente.ClienteId);
         }
 
-        public async Task DeletarPessoaAsync(Guid id)
+        private static ClienteReadDto MapearParaResponse(Cliente cliente)
         {
-            var pessoa = await _repository.BuscarPessoaIdAsync(id);
-
-            if (pessoa is null)
-                throw new Exception("Cadastro de pessoa não encontrado.");
-
-            await _repository.DeletarPessoaAsync(pessoa.PessoaId);
-        }
-
-        private static PessoaReadDto MapearParaResponse(Pessoa pessoa)
-        {
-            return new PessoaReadDto
+            return new ClienteReadDto
             {
-                PessoaId = pessoa.PessoaId,
-                NomePessoa = pessoa.NomePessoa,
-                EmailPessoa = pessoa.EmailPessoa,
-                DataNascimento = pessoa.DataNascimento,
-                TelefonePessoa = pessoa.TelefonePessoa,
-                DocumentoPessoa = pessoa.DocumentoPessoa,
-                EnderecoPessoa = pessoa.EnderecoPessoa
+                ClienteId = cliente.ClienteId,
+                Nome = cliente.Nome,
+                Telefone = cliente.Telefone,
+                Documento = cliente.Documento,
+                EstaAtivo = cliente.EstaAtivo,
+                CriadoEm = cliente.CriadoEm,
+                AlteradoEm = cliente.AlteradoEm,
+                Enderecos = cliente.Enderecos.Select(endereco => new ClienteEnderecoReadDto
+                {
+                    ClienteEnderecoId = endereco.ClienteEnderecoId,
+                    Cep = endereco.Cep,
+                    Logradouro = endereco.Logradouro,
+                    Bairro = endereco.Bairro,
+                    Cidade = endereco.Cidade,
+                    Estado = endereco.Estado,
+                    Numero = endereco.Numero,
+                    Complemento = endereco.Complemento
+                }).ToList()
             };
         }
     }

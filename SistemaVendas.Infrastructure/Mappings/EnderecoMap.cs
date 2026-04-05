@@ -4,13 +4,13 @@ using SistemaVendas.Domain.Entities;
 
 namespace SistemaVendas.Infrastructure.Mappings
 {
-    public class EnderecoMap : IEntityTypeConfiguration<Endereco>
+    public class ClienteEnderecoMap : IEntityTypeConfiguration<ClienteEndereco>
     {
-        public void Configure(EntityTypeBuilder<Endereco> builder)
+        public void Configure(EntityTypeBuilder<ClienteEndereco> builder)
         {
-            builder.ToTable("Enderecos");
+            builder.ToTable("ClienteEnderecos");
 
-            builder.HasKey(e => e.EnderecoId);
+            builder.HasKey(e => e.ClienteEnderecoId);
 
             builder.Property(e => e.Cep)
                 .IsRequired()
@@ -37,6 +37,9 @@ namespace SistemaVendas.Infrastructure.Mappings
 
             builder.Property(e => e.Complemento)
                 .HasMaxLength(200);
+
+            builder.Property(e => e.CriadoEm)
+                .IsRequired();
         }
     }
 }

@@ -1,22 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Application.Services;
-using SistemaVendas.Application.Validators;
-using SistemaVendas.Domain.Entities;
 using SistemaVendas.Infrastructure.Repositories;
 
 namespace SistemaVendas.Tests.PessoaTests
 {
-    public class PessoaTests
+    public class ClienteTests
     {
-        [Fact(DisplayName = "Deve gerar um erro ao adicionar uma pessoa com e-mail inválido.")]
-        public async Task DeveSalvarProdutoNoBancoEBuscar()
+        [Fact(DisplayName = "Deve salvar um cliente com endereço resolvido pelo CEP.")]
+        public async Task DeveSalvarClienteNoBanco()
         {
-            // Arrange: criar DbContext in-memory (use sua factory existente)
-            var context = DbContextFactory.Create(); // sua factory deve configurar InMemory provider
-            var repository = new PessoaRepository(context);
+            var context = DbContextFactory.Create();
+            var repository = new ClienteRepository(context);
 
             var cepMock = new Mock<ICepService>();
             cepMock.Setup(c => c.BuscarCepAsync(It.IsAny<string>()))
@@ -29,28 +26,24 @@ namespace SistemaVendas.Tests.PessoaTests
                     Estado = "SP"
                 });
 
-            var service = new PessoaService(repository, cepMock.Object);
+            var service = new ClienteService(repository, cepMock.Object);
 
-            var dto = new PessoaCreateDto
+            var dto = new ClienteCreateDto
             {
-                NomePessoa = "Maria",
-                EmailPessoa = "maria@example.com",
-                DataNascimento = new DateTime(1985, 5, 5),
-                TelefonePessoa = "11988888888",
-                DocumentoPessoa = "10987654321",
-                Cep = "01001-000",
+                Nome = "Maria",
+                Telefone = "11988888888",
+                Documento = "10987654321",
+                Cep = "01001000",
                 Numero = "200",
                 Complemento = ""
             };
 
-            // Act
-            await service.CriarPessoaAsync(dto);
+            await service.CriarClienteAsync(dto);
 
-            // Assert: verificar que a pessoa e o endereço foram salvos
-            var salva = await context.Pessoas.Include(p => p.EnderecoPessoa).FirstOrDefaultAsync(p => p.EmailPessoa == dto.EmailPessoa);
-            Assert.NotNull(salva);
-            Assert.NotNull(salva.EnderecoPessoa);
-            Assert.Equal("São Paulo", salva.EnderecoPessoa.Cidade);
+            var salvo = await context.Clientes.Include(c => c.Enderecos).FirstOrDefaultAsync(c => c.Documento == dto.Documento);
+            Assert.NotNull(salvo);
+            Assert.NotNull(salvo.Enderecos.FirstOrDefault());
+            Assert.Equal("São Paulo", salvo.Enderecos.First().Cidade);
         }
     }
 }

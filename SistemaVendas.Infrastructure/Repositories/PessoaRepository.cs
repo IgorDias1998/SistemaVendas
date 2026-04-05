@@ -1,64 +1,58 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Domain.Entities;
 using SistemaVendas.Infrastructure.Persistence;
 
 namespace SistemaVendas.Infrastructure.Repositories
 {
-    public class PessoaRepository : IPessoaRepository
+    public class ClienteRepository : IClienteRepository
     {
         private readonly AppDbContext _context;
 
-        public PessoaRepository(AppDbContext context)
+        public ClienteRepository(AppDbContext context)
         {
             _context = context;
         }
 
-        public Task<Pessoa> BuscarPessoaIdAsync(Guid id)
+        public async Task<Cliente?> BuscarClientePorIdAsync(Guid id)
         {
-            return _context.Pessoas
-                .Include(p => p.EnderecoPessoa)
-                .FirstOrDefaultAsync(p => p.PessoaId == id)!;
+            return await _context.Clientes
+                .Include(c => c.Enderecos)
+                .FirstOrDefaultAsync(c => c.ClienteId == id);
         }
 
-        public Task<IEnumerable<Pessoa>> BuscarPessoasAsync()
+        public async Task<IEnumerable<Cliente>> BuscarClientesAsync()
         {
-            return _context.Pessoas
-                .Include(p => p.EnderecoPessoa)
-                .ToListAsync()
-                .ContinueWith<Task<IEnumerable<Pessoa>>>(t => Task.FromResult<IEnumerable<Pessoa>>(t.Result))
-                .Unwrap();
+            return await _context.Clientes
+                .AsNoTracking()
+                .Include(c => c.Enderecos)
+                .ToListAsync();
         }
 
-        public async Task CriarPessoaAsync(Pessoa pessoa)
+        public async Task<Cliente> CriarClienteAsync(Cliente cliente)
         {
-            await _context.Pessoas.AddAsync(pessoa);
+            await _context.Clientes.AddAsync(cliente);
+            await _context.SaveChangesAsync();
+            return cliente;
+        }
+
+        public async Task AtualizarClienteAsync(Cliente cliente)
+        {
+            _context.Clientes.Update(cliente);
             await _context.SaveChangesAsync();
         }
 
-        public Task AtualizarPessoaAsync(Guid id, Pessoa pessoa)
+        public async Task DeletarClienteAsync(Guid id)
         {
-            _context.Pessoas.Update(pessoa);
-            return _context.SaveChangesAsync();
-        }
+            var cliente = await _context.Clientes
+                .Include(c => c.Enderecos)
+                .FirstOrDefaultAsync(c => c.ClienteId == id);
 
-        public Task DeletarPessoaAsync(Guid id)
-        {
-            return DeleteAsync(id);
-        }
+            if (cliente is null)
+                return;
 
-        private async Task<Pessoa> DeleteAsync(Guid id)
-        {
-            var pessoa = await _context.Pessoas
-                .Include(p => p.EnderecoPessoa)
-                .FirstOrDefaultAsync(p => p.PessoaId == id);
-
-            if (pessoa is null)
-                return null!;
-
-            _context.Pessoas.Remove(pessoa);
+            _context.Clientes.Remove(cliente);
             await _context.SaveChangesAsync();
-            return pessoa;
         }
     }
 }

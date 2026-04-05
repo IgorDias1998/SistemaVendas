@@ -1,53 +1,53 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
 
 namespace SistemaVendas.Api.Controllers
 {
     [ApiController]
-    [Route("api/pessoa")]
-    public class PessoaController : ControllerBase
+    [Route("api/clientes")]
+    public class ClientesController : ControllerBase
     {
-        private readonly IPessoaService _pessoaService;
+        private readonly IClienteService _clienteService;
 
-        public PessoaController(IPessoaService pessoaService)
+        public ClientesController(IClienteService clienteService)
         {
-            _pessoaService = pessoaService;
+            _clienteService = clienteService;
         }
 
         [HttpPost]
-        public async Task<ActionResult> CriarNovoCadastroPessoaAsync([FromBody] PessoaCreateDto pessoaCreateDto)
+        public async Task<ActionResult> CriarClienteAsync([FromBody] ClienteCreateDto clienteCreateDto)
         {
-            await _pessoaService.CriarPessoaAsync(pessoaCreateDto);
-            return Ok("Pessoa cadastrada com sucesso.");
+            var cliente = await _clienteService.CriarClienteAsync(clienteCreateDto);
+            return CreatedAtAction(nameof(BuscarClientePorIdAsync), new { id = cliente.ClienteId }, cliente);
         }
 
         [HttpGet]
-        public async Task<ActionResult> BuscarTodasPessoasAsync()
+        public async Task<ActionResult> BuscarClientesAsync()
         {
-            var pessoas = await _pessoaService.BuscarPessoasAsync();
-            return Ok(pessoas);
+            var clientes = await _clienteService.BuscarClientesAsync();
+            return Ok(clientes);
         }
 
         [HttpGet("{id:guid}")]
-        public async Task<ActionResult> BuscarPessoaPorIdAsync(Guid id)
+        public async Task<ActionResult> BuscarClientePorIdAsync(Guid id)
         {
-            var pessoa = await _pessoaService.BuscarPessoaIdAsync(id);
-            return Ok(pessoa);
+            var cliente = await _clienteService.BuscarClientePorIdAsync(id);
+            return Ok(cliente);
         }
 
-        [HttpPut]
-        public async Task<ActionResult> AtualizarPessoaAsync(Guid id, PessoaAtualizarDto pessoaAtualizarDto)
+        [HttpPut("{id:guid}")]
+        public async Task<ActionResult> AtualizarClienteAsync(Guid id, [FromBody] ClienteAtualizarDto clienteAtualizarDto)
         {
-            await _pessoaService.AtualizarPessoaAsync(id, pessoaAtualizarDto);
-            return Ok("Pessoa atualizada com sucesso.");
+            var cliente = await _clienteService.AtualizarClienteAsync(id, clienteAtualizarDto);
+            return Ok(cliente);
         }
 
-        [HttpDelete]
-        public async Task<ActionResult> RemoverPessoaAsync(Guid id)
+        [HttpDelete("{id:guid}")]
+        public async Task<ActionResult> RemoverClienteAsync(Guid id)
         {
-            await _pessoaService.DeletarPessoaAsync(id);
-            return Ok("Cadastro de pessoa removido com sucesso.");
+            await _clienteService.DeletarClienteAsync(id);
+            return NoContent();
         }
     }
 }

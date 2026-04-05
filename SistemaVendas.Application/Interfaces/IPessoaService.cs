@@ -1,13 +1,13 @@
-﻿using SistemaVendas.Application.DTOs;
+using SistemaVendas.Application.DTOs;
 
 namespace SistemaVendas.Application.Interfaces
 {
-    public interface IPessoaService
+    public interface IClienteService
     {
-        public Task CriarPessoaAsync(PessoaCreateDto dto);
-        public Task<IEnumerable<PessoaReadDto>> BuscarPessoasAsync();
-        public Task<PessoaReadDto> BuscarPessoaIdAsync(Guid id);
-        public Task AtualizarPessoaAsync(Guid id, PessoaAtualizarDto pessoaAtualizarDto);
-        public Task DeletarPessoaAsync(Guid id);
+        Task<ClienteReadDto> CriarClienteAsync(ClienteCreateDto dto);
+        Task<IEnumerable<ClienteReadDto>> BuscarClientesAsync();
+        Task<ClienteReadDto> BuscarClientePorIdAsync(Guid id);
+        Task<ClienteReadDto> AtualizarClienteAsync(Guid id, ClienteAtualizarDto clienteAtualizarDto);
+        Task DeletarClienteAsync(Guid id);
     }
 }

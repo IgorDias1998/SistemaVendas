@@ -1,17 +1,12 @@
-﻿using System.Globalization;
-using SistemaVendas.Domain.Entities;
-
 namespace SistemaVendas.Application.DTOs
 {
-    public class PessoaCreateDto
+    public class ClienteCreateDto
     {
-        public string NomePessoa { get; set; } = string.Empty;
-        public string EmailPessoa { get; set; } = string.Empty;
-        public DateTime DataNascimento { get; set; }
-        public string TelefonePessoa { get; set; } = string.Empty;
-        public string DocumentoPessoa { get; set; } = string.Empty;
+        public string Nome { get; set; } = string.Empty;
+        public string Telefone { get; set; } = string.Empty;
+        public string Documento { get; set; } = string.Empty;
         public string Cep { get; set; } = string.Empty;
         public string Numero { get; set; } = string.Empty;
-        public string? Complemento { get; set; } 
+        public string? Complemento { get; set; }
     }
 }

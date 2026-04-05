@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SistemaVendas.Domain.Entities;
 
 namespace SistemaVendas.Infrastructure.Persistence
@@ -10,15 +10,14 @@ namespace SistemaVendas.Infrastructure.Persistence
         }
 
         public DbSet<Produto> Produtos { get; set; }
-        public DbSet<Pessoa> Pessoas { get; set; }
-        public DbSet<Endereco> Enderecos { get; set; }
+        public DbSet<Cliente> Clientes { get; set; }
+        public DbSet<ClienteEndereco> ClienteEnderecos { get; set; }
         public DbSet<Venda> Vendas { get; set; }
         public DbSet<ItemVenda> ItensVenda { get; set; }
         public DbSet<Usuario> Usuarios { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Apply all IEntityTypeConfiguration<T> implementations from this assembly
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
             base.OnModelCreating(modelBuilder);

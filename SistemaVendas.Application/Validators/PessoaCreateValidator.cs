@@ -1,40 +1,28 @@
-﻿using FluentValidation;
+using FluentValidation;
 using SistemaVendas.Application.DTOs;
 
 namespace SistemaVendas.Application.Validators
 {
-    public class PessoaCreateValidator : AbstractValidator<PessoaCreateDto>
+    public class ClienteCreateValidator : AbstractValidator<ClienteCreateDto>
     {
-        public PessoaCreateValidator() 
+        public ClienteCreateValidator()
         {
-            RuleFor(p => p.NomePessoa)
-                .NotEmpty().WithMessage("O nome é obrigatório.")
-                .MaximumLength(200).WithMessage("O nome deve ter no máximo 150 caracteres.");
+            RuleFor(c => c.Nome)
+                .NotEmpty().WithMessage("O nome do cliente é obrigatório.")
+                .MaximumLength(200).WithMessage("O nome do cliente deve ter no máximo 200 caracteres.");
 
-            RuleFor(p => p.EmailPessoa)
-                .NotEmpty().WithMessage("O e-mail é obrigatório.")
-                .EmailAddress().WithMessage("E-mail inválido.");
-
-            RuleFor(p => p.DataNascimento)
-                .LessThan(DateTime.Today)
-                .WithMessage("A data de nascimento deve ser anterior à data atual.");
-
-            RuleFor(p => p.TelefonePessoa)
+            RuleFor(c => c.Telefone)
                 .NotEmpty().WithMessage("O telefone é obrigatório.")
-                .Matches(@"^\d{10,11}$")
-                .WithMessage("O telefone deve conter 10 ou 11 números.");
+                .Matches(@"^\d{10,11}$").WithMessage("O telefone deve conter 10 ou 11 números.");
 
-            RuleFor(p => p.DocumentoPessoa)
-                .NotEmpty().WithMessage("O documento é obrigatório.")
-                .Matches(@"^\d{11}$")
-                .WithMessage("O documento deve conter 11 números.");
+            RuleFor(c => c.Documento)
+                .MaximumLength(20).WithMessage("O documento deve ter no máximo 20 caracteres.");
 
-            RuleFor(p => p.Cep)
+            RuleFor(c => c.Cep)
                 .NotEmpty().WithMessage("O CEP é obrigatório.")
-                .Matches(@"^\d{8}$")
-                .WithMessage("O CEP deve conter 8 números.");
+                .Matches(@"^\d{8}$").WithMessage("O CEP deve conter 8 números.");
 
-            RuleFor(p => p.Numero)
+            RuleFor(c => c.Numero)
                 .NotEmpty().WithMessage("O número do endereço é obrigatório.");
         }
     }
