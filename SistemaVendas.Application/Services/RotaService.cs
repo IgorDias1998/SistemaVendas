@@ -32,7 +32,7 @@ namespace SistemaVendas.Application.Services
             _rotaReordenarValidator = rotaReordenarValidator;
         }
 
-        public async Task<RotaReadDto> CriarRotaAsync(RotaCriarDto dto)
+        public async Task<RotaReadDto> CriarRotaAsync(RotaCriarDto dto, Guid criadoPorUsuarioId)
         {
             await _rotaCriarValidator.ValidateAndThrowAsync(dto);
 
@@ -49,7 +49,7 @@ namespace SistemaVendas.Application.Services
 
             var rota = new Rota
             {
-                CriadoPeloUsuarioId = dto.CriadoPeloUsuarioId,
+                CriadoPeloUsuarioId = criadoPorUsuarioId,
                 Status = StatusRota.Rascunho,
                 Paradas = dto.DeliveryIds.Select((deliveryId, index) => new ParadaRota
                 {
@@ -62,7 +62,7 @@ namespace SistemaVendas.Application.Services
             var rotaSalva = await _rotaRepository.AdicionarAsync(rota);
 
             if (dto.EntregadorId.HasValue)
-                return await AtribuirEntregadorAsync(rotaSalva.RotaId, dto.EntregadorId.Value, dto.CriadoPeloUsuarioId);
+                return await AtribuirEntregadorAsync(rotaSalva.RotaId, dto.EntregadorId.Value, criadoPorUsuarioId);
 
             var rotaCompleta = await _rotaRepository.BuscarPorIdAsync(rotaSalva.RotaId) ?? rotaSalva;
             return MapearParaResponse(rotaCompleta);
@@ -124,7 +124,7 @@ namespace SistemaVendas.Application.Services
             return MapearParaResponse(rota);
         }
 
-        public async Task<RotaReadDto> ReordenarParadasAsync(Guid rotaId, RotaReordenarParadasDto dto)
+        public async Task<RotaReadDto> ReordenarParadasAsync(Guid rotaId, RotaReordenarParadasDto dto, Guid alteradoPorUsuarioId)
         {
             await _rotaReordenarValidator.ValidateAndThrowAsync(dto);
 
@@ -154,7 +154,7 @@ namespace SistemaVendas.Application.Services
                 .Select(p => new { p.ParadaRotaId, p.StopOrder })
                 .ToList();
 
-            await RegistrarLogAsync(rota.RotaId, dto.AlteradoPeloUsuarioId, TipoMudancaRota.Reordenar, oldOrder, newOrder);
+            await RegistrarLogAsync(rota.RotaId, alteradoPorUsuarioId, TipoMudancaRota.Reordenar, oldOrder, newOrder);
 
             var rotaAtualizada = await _rotaRepository.BuscarPorIdAsync(rotaId) ?? rota;
             return MapearParaResponse(rotaAtualizada);

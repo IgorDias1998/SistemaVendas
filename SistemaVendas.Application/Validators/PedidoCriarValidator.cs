@@ -10,9 +10,6 @@ namespace SistemaVendas.Application.Validators
             RuleFor(x => x.ClienteId)
                 .NotEmpty().WithMessage("O cliente do pedido e obrigatorio.");
 
-            RuleFor(x => x.CriadoPeloUsuarioId)
-                .NotEmpty().WithMessage("O usuario criador do pedido e obrigatorio.");
-
             RuleFor(x => x.Tipo)
                 .IsInEnum().WithMessage("O tipo de pedido informado e invalido.");
 

@@ -52,18 +52,16 @@ namespace SistemaVendas.Tests.RotaTests
 
             var rota = await service.CriarRotaAsync(new RotaCriarDto
             {
-                CriadoPeloUsuarioId = criador.UsuarioId,
                 EntregadorId = entregador.UsuarioId,
                 DeliveryIds = new List<Guid> { delivery1.DeliveryId, delivery2.DeliveryId }
-            });
+            }, criador.UsuarioId);
 
             var ordemInvertida = rota.Paradas.OrderByDescending(x => x.StopOrder).Select(x => x.ParadaRotaId).ToList();
 
             await service.ReordenarParadasAsync(rota.RotaId, new RotaReordenarParadasDto
             {
-                AlteradoPeloUsuarioId = criador.UsuarioId,
                 ParadaIdsEmOrdem = ordemInvertida
-            });
+            }, criador.UsuarioId);
 
             var logs = await context.LogsMudancaRota.Where(x => x.RotaId == rota.RotaId).ToListAsync();
             Assert.Contains(logs, x => x.TipoMudanca == TipoMudancaRota.Reordenar);
@@ -109,10 +107,9 @@ namespace SistemaVendas.Tests.RotaTests
 
             var rota = await service.CriarRotaAsync(new RotaCriarDto
             {
-                CriadoPeloUsuarioId = criador.UsuarioId,
                 EntregadorId = entregador.UsuarioId,
                 DeliveryIds = new List<Guid> { delivery.DeliveryId }
-            });
+            }, criador.UsuarioId);
 
             await service.IniciarRotaAsync(rota.RotaId, criador.UsuarioId);
             var rotaFinalizada = await service.FinalizarRotaAsync(rota.RotaId, criador.UsuarioId);
@@ -121,9 +118,8 @@ namespace SistemaVendas.Tests.RotaTests
 
             await Assert.ThrowsAsync<InvalidOperationException>(() => service.ReordenarParadasAsync(rota.RotaId, new RotaReordenarParadasDto
             {
-                AlteradoPeloUsuarioId = criador.UsuarioId,
                 ParadaIdsEmOrdem = rotaFinalizada.Paradas.Select(x => x.ParadaRotaId).ToList()
-            }));
+            }, criador.UsuarioId));
         }
     }
 }

@@ -27,7 +27,7 @@ namespace SistemaVendas.Application.Services
             _pedidoValidator = pedidoValidator;
         }
 
-        public async Task<PedidoReadDto> CriarRascunhoAsync(PedidoCriarDto pedidoDto)
+        public async Task<PedidoReadDto> CriarRascunhoAsync(PedidoCriarDto pedidoDto, Guid criadoPorUsuarioId)
         {
             if (pedidoDto is null)
                 throw new ArgumentNullException(nameof(pedidoDto));
@@ -60,7 +60,7 @@ namespace SistemaVendas.Application.Services
             var pedido = new Pedido
             {
                 ClienteId = pedidoDto.ClienteId,
-                CriadoPeloUsuarioId = pedidoDto.CriadoPeloUsuarioId,
+                CriadoPeloUsuarioId = criadoPorUsuarioId,
                 Tipo = pedidoDto.Tipo,
                 Status = StatusPedido.Rascunho,
                 Observacao = pedidoDto.Observacao,

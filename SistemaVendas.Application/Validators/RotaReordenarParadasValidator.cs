@@ -7,9 +7,6 @@ namespace SistemaVendas.Application.Validators
     {
         public RotaReordenarParadasValidator()
         {
-            RuleFor(x => x.AlteradoPeloUsuarioId)
-                .NotEmpty().WithMessage("O usuario responsavel pela alteracao e obrigatorio.");
-
             RuleFor(x => x.ParadaIdsEmOrdem)
                 .NotEmpty().WithMessage("A reordenacao deve informar a nova ordem das paradas.");
 

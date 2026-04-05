@@ -7,9 +7,6 @@ namespace SistemaVendas.Application.Validators
     {
         public RotaCriarValidator()
         {
-            RuleFor(x => x.CriadoPeloUsuarioId)
-                .NotEmpty().WithMessage("O usuario criador da rota e obrigatorio.");
-
             RuleFor(x => x.DeliveryIds)
                 .NotEmpty().WithMessage("A rota deve possuir ao menos uma delivery.");
 

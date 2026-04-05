@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
@@ -5,6 +6,7 @@ using SistemaVendas.Application.Interfaces;
 namespace SistemaVendas.Api.Controllers
 {
     [ApiController]
+    [Authorize(Roles = "Admin,Operador")]
     [Route("api/clientes")]
     public class ClientesController : ControllerBase
     {

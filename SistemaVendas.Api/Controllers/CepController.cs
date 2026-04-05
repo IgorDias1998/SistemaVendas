@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaVendas.Application.Interfaces;
 
@@ -6,6 +6,7 @@ namespace SistemaVendas.Api.Controllers
 {
     [Route("api/cep")]
     [ApiController]
+    [Authorize(Roles = "Admin,Operador")]
     public class CepController : ControllerBase
     {
         private readonly ICepService _cepService;

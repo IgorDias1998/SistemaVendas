@@ -43,7 +43,6 @@ namespace SistemaVendas.Tests.PedidoTests
             var pedido = await service.CriarRascunhoAsync(new PedidoCriarDto
             {
                 ClienteId = cliente.ClienteId,
-                CriadoPeloUsuarioId = Guid.NewGuid(),
                 Tipo = TipoPedido.Delivery,
                 Itens =
                 {
@@ -53,7 +52,7 @@ namespace SistemaVendas.Tests.PedidoTests
                         Quantidade = 2
                     }
                 }
-            });
+            }, Guid.NewGuid());
 
             var pedidoConfirmado = await service.ConfirmarPedidoAsync(pedido.PedidoId);
 
@@ -85,7 +84,6 @@ namespace SistemaVendas.Tests.PedidoTests
             var pedido = await service.CriarRascunhoAsync(new PedidoCriarDto
             {
                 ClienteId = cliente.ClienteId,
-                CriadoPeloUsuarioId = Guid.NewGuid(),
                 Tipo = TipoPedido.Retirada,
                 Itens =
                 {
@@ -95,7 +93,7 @@ namespace SistemaVendas.Tests.PedidoTests
                         Quantidade = 1
                     }
                 }
-            });
+            }, Guid.NewGuid());
 
             var pedidoConfirmado = await service.ConfirmarPedidoAsync(pedido.PedidoId);
 

@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SistemaVendas.Api.Extensions;
 using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
 
@@ -8,6 +10,7 @@ namespace SistemaVendas.Api.Controllers
     /// Endpoints para criacao, consulta e mudanca de status dos pedidos.
     /// </summary>
     [ApiController]
+    [Authorize(Roles = "Admin,Operador")]
     [Route("api/pedidos")]
     public class PedidosController : ControllerBase
     {
@@ -24,7 +27,7 @@ namespace SistemaVendas.Api.Controllers
         [HttpPost]
         public async Task<ActionResult> CriarRascunho([FromBody] PedidoCriarDto pedidoDto)
         {
-            var pedido = await _pedidoService.CriarRascunhoAsync(pedidoDto);
+            var pedido = await _pedidoService.CriarRascunhoAsync(pedidoDto, User.GetRequiredUserId());
             return CreatedAtAction(nameof(BuscarPorId), new { id = pedido.PedidoId }, pedido);
         }
 

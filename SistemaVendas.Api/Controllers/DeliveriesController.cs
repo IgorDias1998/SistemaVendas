@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
@@ -8,6 +9,7 @@ namespace SistemaVendas.Api.Controllers
     /// Endpoints para consulta e atualizacao de deliveries.
     /// </summary>
     [ApiController]
+    [Authorize(Roles = "Admin,Operador,Entregador")]
     [Route("api/deliveries")]
     public class DeliveriesController : ControllerBase
     {
