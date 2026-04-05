@@ -1,3 +1,4 @@
+using FluentValidation;
 using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Domain.Entities;
@@ -7,10 +8,14 @@ namespace SistemaVendas.Application.Services
     public class DeliveryService : IDeliveryService
     {
         private readonly IDeliveryRepository _deliveryRepository;
+        private readonly IValidator<DeliveryAtualizarStatusDto> _statusValidator;
 
-        public DeliveryService(IDeliveryRepository deliveryRepository)
+        public DeliveryService(
+            IDeliveryRepository deliveryRepository,
+            IValidator<DeliveryAtualizarStatusDto> statusValidator)
         {
             _deliveryRepository = deliveryRepository;
+            _statusValidator = statusValidator;
         }
 
         public async Task<IEnumerable<DeliveryReadDto>> BuscarDeliveriesAsync()
@@ -30,17 +35,19 @@ namespace SistemaVendas.Application.Services
             var delivery = await _deliveryRepository.BuscarPorIdAsync(deliveryId);
 
             if (delivery is null)
-                throw new KeyNotFoundException("Delivery não encontrado.");
+                throw new KeyNotFoundException("Delivery nao encontrado.");
 
             return MapearParaResponse(delivery);
         }
 
         public async Task<DeliveryReadDto> AtualizarStatusAsync(Guid deliveryId, DeliveryAtualizarStatusDto dto)
         {
+            await _statusValidator.ValidateAndThrowAsync(dto);
+
             var delivery = await _deliveryRepository.BuscarPorIdAsync(deliveryId);
 
             if (delivery is null)
-                throw new KeyNotFoundException("Delivery não encontrado.");
+                throw new KeyNotFoundException("Delivery nao encontrado.");
 
             delivery.Status = dto.Status;
             await _deliveryRepository.AtualizarAsync(delivery);

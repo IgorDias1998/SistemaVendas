@@ -4,6 +4,9 @@ using SistemaVendas.Application.Interfaces;
 
 namespace SistemaVendas.Api.Controllers
 {
+    /// <summary>
+    /// Endpoints de autenticacao e bootstrap inicial do sistema.
+    /// </summary>
     [ApiController]
     [Route("api/auth")]
     public class AuthController : ControllerBase
@@ -15,6 +18,9 @@ namespace SistemaVendas.Api.Controllers
             _authService = authService;
         }
 
+        /// <summary>
+        /// Cria o primeiro usuario administrador quando ainda nao existem usuarios cadastrados.
+        /// </summary>
         [HttpPost("bootstrap-admin")]
         public async Task<ActionResult> BootstrapAdmin([FromBody] UsuarioCriarDto usuarioDto)
         {
@@ -22,6 +28,9 @@ namespace SistemaVendas.Api.Controllers
             return CreatedAtAction(nameof(BootstrapAdmin), new { id = usuario.UsuarioId }, usuario);
         }
 
+        /// <summary>
+        /// Realiza o login do usuario e retorna o token JWT de acesso.
+        /// </summary>
         [HttpPost("login")]
         public async Task<ActionResult> Login([FromBody] AuthLoginDto loginDto)
         {

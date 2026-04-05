@@ -1,3 +1,5 @@
+using System.Text.Json;
+using FluentValidation;
 using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Domain.Entities;
@@ -10,29 +12,37 @@ namespace SistemaVendas.Application.Services
         private readonly IRotaRepository _rotaRepository;
         private readonly IDeliveryRepository _deliveryRepository;
         private readonly IUsuarioRepository _usuarioRepository;
+        private readonly ILogMudancaRotaRepository _logRepository;
+        private readonly IValidator<RotaCriarDto> _rotaCriarValidator;
+        private readonly IValidator<RotaReordenarParadasDto> _rotaReordenarValidator;
 
         public RotaService(
             IRotaRepository rotaRepository,
             IDeliveryRepository deliveryRepository,
-            IUsuarioRepository usuarioRepository)
+            IUsuarioRepository usuarioRepository,
+            ILogMudancaRotaRepository logRepository,
+            IValidator<RotaCriarDto> rotaCriarValidator,
+            IValidator<RotaReordenarParadasDto> rotaReordenarValidator)
         {
             _rotaRepository = rotaRepository;
             _deliveryRepository = deliveryRepository;
             _usuarioRepository = usuarioRepository;
+            _logRepository = logRepository;
+            _rotaCriarValidator = rotaCriarValidator;
+            _rotaReordenarValidator = rotaReordenarValidator;
         }
 
         public async Task<RotaReadDto> CriarRotaAsync(RotaCriarDto dto)
         {
-            if (dto.DeliveryIds is null || dto.DeliveryIds.Count == 0)
-                throw new ArgumentException("A rota deve possuir ao menos uma delivery.", nameof(dto));
+            await _rotaCriarValidator.ValidateAndThrowAsync(dto);
 
             if (await _rotaRepository.AlgumaDeliveryEmRotaAtivaAsync(dto.DeliveryIds))
-                throw new InvalidOperationException("Uma ou mais deliveries já estão vinculadas a uma rota ativa.");
+                throw new InvalidOperationException("Uma ou mais deliveries ja estao vinculadas a uma rota ativa.");
 
             var deliveries = (await _deliveryRepository.BuscarPorIdsAsync(dto.DeliveryIds)).ToList();
 
             if (deliveries.Count != dto.DeliveryIds.Count)
-                throw new KeyNotFoundException("Uma ou mais deliveries não foram encontradas.");
+                throw new KeyNotFoundException("Uma ou mais deliveries nao foram encontradas.");
 
             if (deliveries.Any(d => d.Status != StatusDelivery.Pendente && d.Status != StatusDelivery.Associado))
                 throw new InvalidOperationException("Somente deliveries pendentes podem entrar em uma rota.");
@@ -50,8 +60,11 @@ namespace SistemaVendas.Application.Services
             };
 
             var rotaSalva = await _rotaRepository.AdicionarAsync(rota);
-            var rotaCompleta = await _rotaRepository.BuscarPorIdAsync(rotaSalva.RotaId) ?? rotaSalva;
 
+            if (dto.EntregadorId.HasValue)
+                return await AtribuirEntregadorAsync(rotaSalva.RotaId, dto.EntregadorId.Value, dto.CriadoPeloUsuarioId);
+
+            var rotaCompleta = await _rotaRepository.BuscarPorIdAsync(rotaSalva.RotaId) ?? rotaSalva;
             return MapearParaResponse(rotaCompleta);
         }
 
@@ -66,21 +79,27 @@ namespace SistemaVendas.Application.Services
             var rota = await _rotaRepository.BuscarPorIdAsync(rotaId);
 
             if (rota is null)
-                throw new KeyNotFoundException("Rota não encontrada.");
+                throw new KeyNotFoundException("Rota nao encontrada.");
 
             return MapearParaResponse(rota);
         }
 
-        public async Task<RotaReadDto> AtribuirEntregadorAsync(Guid rotaId, Guid entregadorId)
+        public async Task<RotaReadDto> AtribuirEntregadorAsync(Guid rotaId, Guid entregadorId, Guid alteradoPorUsuarioId)
         {
             var rota = await ObterRotaEditavelAsync(rotaId);
             var entregador = await _usuarioRepository.BuscarPorIdAsync(entregadorId);
 
             if (entregador is null)
-                throw new KeyNotFoundException("Entregador não encontrado.");
+                throw new KeyNotFoundException("Entregador nao encontrado.");
 
             if (entregador.Role != UserRole.Entregador)
-                throw new InvalidOperationException("O usuário informado não possui papel de entregador.");
+                throw new InvalidOperationException("O usuario informado nao possui papel de entregador.");
+
+            var oldValue = new
+            {
+                rota.AssociadoAoEntregadorId,
+                rota.Status
+            };
 
             rota.AssociadoAoEntregadorId = entregadorId;
             rota.AtribuidoEm = DateTime.UtcNow;
@@ -96,18 +115,31 @@ namespace SistemaVendas.Application.Services
             }
 
             await _rotaRepository.AtualizarAsync(rota);
+            await RegistrarLogAsync(rota.RotaId, alteradoPorUsuarioId, TipoMudancaRota.Atribuir, oldValue, new
+            {
+                rota.AssociadoAoEntregadorId,
+                rota.Status
+            });
+
             return MapearParaResponse(rota);
         }
 
         public async Task<RotaReadDto> ReordenarParadasAsync(Guid rotaId, RotaReordenarParadasDto dto)
         {
+            await _rotaReordenarValidator.ValidateAndThrowAsync(dto);
+
             var rota = await ObterRotaEditavelAsync(rotaId);
 
             var paradaIdsAtuais = rota.Paradas.Select(p => p.ParadaRotaId).OrderBy(id => id).ToList();
             var paradaIdsRecebidos = dto.ParadaIdsEmOrdem.OrderBy(id => id).ToList();
 
             if (!paradaIdsAtuais.SequenceEqual(paradaIdsRecebidos))
-                throw new InvalidOperationException("A lista de paradas enviada não corresponde às paradas da rota.");
+                throw new InvalidOperationException("A lista de paradas enviada nao corresponde as paradas da rota.");
+
+            var oldOrder = rota.Paradas
+                .OrderBy(p => p.StopOrder)
+                .Select(p => new { p.ParadaRotaId, p.StopOrder })
+                .ToList();
 
             for (var i = 0; i < dto.ParadaIdsEmOrdem.Count; i++)
             {
@@ -116,25 +148,35 @@ namespace SistemaVendas.Application.Services
             }
 
             await _rotaRepository.AtualizarAsync(rota);
+
+            var newOrder = rota.Paradas
+                .OrderBy(p => p.StopOrder)
+                .Select(p => new { p.ParadaRotaId, p.StopOrder })
+                .ToList();
+
+            await RegistrarLogAsync(rota.RotaId, dto.AlteradoPeloUsuarioId, TipoMudancaRota.Reordenar, oldOrder, newOrder);
+
             var rotaAtualizada = await _rotaRepository.BuscarPorIdAsync(rotaId) ?? rota;
             return MapearParaResponse(rotaAtualizada);
         }
 
-        public async Task<RotaReadDto> IniciarRotaAsync(Guid rotaId)
+        public async Task<RotaReadDto> IniciarRotaAsync(Guid rotaId, Guid alteradoPorUsuarioId)
         {
             var rota = await _rotaRepository.BuscarPorIdAsync(rotaId);
 
             if (rota is null)
-                throw new KeyNotFoundException("Rota não encontrada.");
+                throw new KeyNotFoundException("Rota nao encontrada.");
 
             if (rota.Status == StatusRota.Finalizada)
-                throw new InvalidOperationException("Rotas finalizadas não podem ser iniciadas novamente.");
+                throw new InvalidOperationException("Rotas finalizadas nao podem ser iniciadas novamente.");
 
             if (rota.Status != StatusRota.Atribuida)
-                throw new InvalidOperationException("Somente rotas atribuídas podem ser iniciadas.");
+                throw new InvalidOperationException("Somente rotas atribuidas podem ser iniciadas.");
 
             if (rota.AssociadoAoEntregadorId is null)
-                throw new InvalidOperationException("A rota precisa estar atribuída a um entregador antes de iniciar.");
+                throw new InvalidOperationException("A rota precisa estar atribuida a um entregador antes de iniciar.");
+
+            var oldValue = new { rota.Status, rota.InicioEm };
 
             rota.Status = StatusRota.EmProgresso;
             rota.InicioEm = DateTime.UtcNow;
@@ -149,26 +191,40 @@ namespace SistemaVendas.Application.Services
             }
 
             await _rotaRepository.AtualizarAsync(rota);
+            await RegistrarLogAsync(rota.RotaId, alteradoPorUsuarioId, TipoMudancaRota.Iniciar, oldValue, new
+            {
+                rota.Status,
+                rota.InicioEm
+            });
+
             return MapearParaResponse(rota);
         }
 
-        public async Task<RotaReadDto> FinalizarRotaAsync(Guid rotaId)
+        public async Task<RotaReadDto> FinalizarRotaAsync(Guid rotaId, Guid alteradoPorUsuarioId)
         {
             var rota = await _rotaRepository.BuscarPorIdAsync(rotaId);
 
             if (rota is null)
-                throw new KeyNotFoundException("Rota não encontrada.");
+                throw new KeyNotFoundException("Rota nao encontrada.");
 
             if (rota.Status == StatusRota.Finalizada)
-                throw new InvalidOperationException("A rota já está finalizada.");
+                throw new InvalidOperationException("A rota ja esta finalizada.");
 
             if (rota.Status != StatusRota.EmProgresso)
                 throw new InvalidOperationException("Somente rotas em progresso podem ser finalizadas.");
+
+            var oldValue = new { rota.Status, rota.TerminoEm };
 
             rota.Status = StatusRota.Finalizada;
             rota.TerminoEm = DateTime.UtcNow;
 
             await _rotaRepository.AtualizarAsync(rota);
+            await RegistrarLogAsync(rota.RotaId, alteradoPorUsuarioId, TipoMudancaRota.Finalizar, oldValue, new
+            {
+                rota.Status,
+                rota.TerminoEm
+            });
+
             return MapearParaResponse(rota);
         }
 
@@ -177,12 +233,24 @@ namespace SistemaVendas.Application.Services
             var rota = await _rotaRepository.BuscarPorIdAsync(rotaId);
 
             if (rota is null)
-                throw new KeyNotFoundException("Rota não encontrada.");
+                throw new KeyNotFoundException("Rota nao encontrada.");
 
             if (rota.Status == StatusRota.Finalizada)
-                throw new InvalidOperationException("Não é permitido alterar uma rota finalizada.");
+                throw new InvalidOperationException("Nao e permitido alterar uma rota finalizada.");
 
             return rota;
+        }
+
+        private async Task RegistrarLogAsync(Guid rotaId, Guid alteradoPorUsuarioId, TipoMudancaRota tipo, object oldValue, object newValue)
+        {
+            await _logRepository.AdicionarAsync(new LogMudancaRota
+            {
+                RotaId = rotaId,
+                AlteradoPeloUsuarioId = alteradoPorUsuarioId,
+                TipoMudanca = tipo,
+                OldValue = JsonSerializer.Serialize(oldValue),
+                NewValue = JsonSerializer.Serialize(newValue)
+            });
         }
 
         private static RotaReadDto MapearParaResponse(Rota rota)

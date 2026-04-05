@@ -4,6 +4,9 @@ using SistemaVendas.Application.Interfaces;
 
 namespace SistemaVendas.Api.Controllers
 {
+    /// <summary>
+    /// Endpoints para consulta e atualizacao de deliveries.
+    /// </summary>
     [ApiController]
     [Route("api/deliveries")]
     public class DeliveriesController : ControllerBase
@@ -15,6 +18,9 @@ namespace SistemaVendas.Api.Controllers
             _deliveryService = deliveryService;
         }
 
+        /// <summary>
+        /// Lista todas as deliveries.
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult> BuscarDeliveries()
         {
@@ -22,6 +28,9 @@ namespace SistemaVendas.Api.Controllers
             return Ok(deliveries);
         }
 
+        /// <summary>
+        /// Lista apenas deliveries pendentes.
+        /// </summary>
         [HttpGet("pendentes")]
         public async Task<ActionResult> BuscarPendentes()
         {
@@ -29,6 +38,9 @@ namespace SistemaVendas.Api.Controllers
             return Ok(deliveries);
         }
 
+        /// <summary>
+        /// Busca uma delivery pelo identificador.
+        /// </summary>
         [HttpGet("{id:guid}")]
         public async Task<ActionResult> BuscarPorId(Guid id)
         {
@@ -36,6 +48,9 @@ namespace SistemaVendas.Api.Controllers
             return Ok(delivery);
         }
 
+        /// <summary>
+        /// Atualiza o status de uma delivery.
+        /// </summary>
         [HttpPut("{id:guid}/status")]
         public async Task<ActionResult> AtualizarStatus(Guid id, [FromBody] DeliveryAtualizarStatusDto dto)
         {

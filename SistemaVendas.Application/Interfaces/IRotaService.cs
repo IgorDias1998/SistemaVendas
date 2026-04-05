@@ -7,9 +7,9 @@ namespace SistemaVendas.Application.Interfaces
         Task<RotaReadDto> CriarRotaAsync(RotaCriarDto dto);
         Task<IEnumerable<RotaReadDto>> BuscarRotasAsync();
         Task<RotaReadDto> BuscarRotaPorIdAsync(Guid rotaId);
-        Task<RotaReadDto> AtribuirEntregadorAsync(Guid rotaId, Guid entregadorId);
+        Task<RotaReadDto> AtribuirEntregadorAsync(Guid rotaId, Guid entregadorId, Guid alteradoPorUsuarioId);
         Task<RotaReadDto> ReordenarParadasAsync(Guid rotaId, RotaReordenarParadasDto dto);
-        Task<RotaReadDto> IniciarRotaAsync(Guid rotaId);
-        Task<RotaReadDto> FinalizarRotaAsync(Guid rotaId);
+        Task<RotaReadDto> IniciarRotaAsync(Guid rotaId, Guid alteradoPorUsuarioId);
+        Task<RotaReadDto> FinalizarRotaAsync(Guid rotaId, Guid alteradoPorUsuarioId);
     }
 }

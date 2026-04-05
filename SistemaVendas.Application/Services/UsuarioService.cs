@@ -1,3 +1,4 @@
+using FluentValidation;
 using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Domain.Entities;
@@ -8,11 +9,16 @@ namespace SistemaVendas.Application.Services
     {
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IValidator<UsuarioCriarDto> _usuarioValidator;
 
-        public UsuarioService(IUsuarioRepository usuarioRepository, IPasswordHasher passwordHasher)
+        public UsuarioService(
+            IUsuarioRepository usuarioRepository,
+            IPasswordHasher passwordHasher,
+            IValidator<UsuarioCriarDto> usuarioValidator)
         {
             _usuarioRepository = usuarioRepository;
             _passwordHasher = passwordHasher;
+            _usuarioValidator = usuarioValidator;
         }
 
         public async Task<UsuarioReadDto> CriarUsuarioAsync(UsuarioCriarDto usuarioDto)
@@ -20,18 +26,19 @@ namespace SistemaVendas.Application.Services
             if (usuarioDto is null)
                 throw new ArgumentNullException(nameof(usuarioDto));
 
+            await _usuarioValidator.ValidateAndThrowAsync(usuarioDto);
+
             var email = usuarioDto.Email.Trim().ToLowerInvariant();
             var usuarioExistente = await _usuarioRepository.BuscarPorEmailAsync(email);
 
             if (usuarioExistente is not null)
-                throw new InvalidOperationException("Já existe um usuário com este e-mail.");
+                throw new InvalidOperationException("Ja existe um usuario com este e-mail.");
 
             var usuario = new Usuario(
                 usuarioDto.Nome,
                 email,
                 _passwordHasher.HashPassword(usuarioDto.Senha),
-                usuarioDto.Role
-            );
+                usuarioDto.Role);
 
             var usuarioSalvo = await _usuarioRepository.AdicionarAsync(usuario);
             return MapearParaResponse(usuarioSalvo);
@@ -48,7 +55,7 @@ namespace SistemaVendas.Application.Services
             var usuario = await _usuarioRepository.BuscarPorIdAsync(usuarioId);
 
             if (usuario is null)
-                throw new KeyNotFoundException("Usuário não encontrado.");
+                throw new KeyNotFoundException("Usuario nao encontrado.");
 
             return MapearParaResponse(usuario);
         }
@@ -58,7 +65,7 @@ namespace SistemaVendas.Application.Services
             var usuario = await _usuarioRepository.BuscarPorIdAsync(usuarioId);
 
             if (usuario is null)
-                throw new KeyNotFoundException("Usuário não encontrado.");
+                throw new KeyNotFoundException("Usuario nao encontrado.");
 
             usuario.DefinirRole(roleDto.Role);
             await _usuarioRepository.AtualizarAsync(usuario);
@@ -71,7 +78,7 @@ namespace SistemaVendas.Application.Services
             var usuario = await _usuarioRepository.BuscarPorIdAsync(usuarioId);
 
             if (usuario is null)
-                throw new KeyNotFoundException("Usuário não encontrado.");
+                throw new KeyNotFoundException("Usuario nao encontrado.");
 
             if (ativo)
                 usuario.Ativar();

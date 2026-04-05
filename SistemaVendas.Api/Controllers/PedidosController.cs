@@ -4,6 +4,9 @@ using SistemaVendas.Application.Interfaces;
 
 namespace SistemaVendas.Api.Controllers
 {
+    /// <summary>
+    /// Endpoints para criacao, consulta e mudanca de status dos pedidos.
+    /// </summary>
     [ApiController]
     [Route("api/pedidos")]
     public class PedidosController : ControllerBase
@@ -15,6 +18,9 @@ namespace SistemaVendas.Api.Controllers
             _pedidoService = pedidoService;
         }
 
+        /// <summary>
+        /// Cria um pedido em rascunho.
+        /// </summary>
         [HttpPost]
         public async Task<ActionResult> CriarRascunho([FromBody] PedidoCriarDto pedidoDto)
         {
@@ -22,6 +28,9 @@ namespace SistemaVendas.Api.Controllers
             return CreatedAtAction(nameof(BuscarPorId), new { id = pedido.PedidoId }, pedido);
         }
 
+        /// <summary>
+        /// Lista os pedidos cadastrados.
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult> BuscarPedidos()
         {
@@ -29,6 +38,9 @@ namespace SistemaVendas.Api.Controllers
             return Ok(pedidos);
         }
 
+        /// <summary>
+        /// Busca um pedido pelo identificador.
+        /// </summary>
         [HttpGet("{id:guid}")]
         public async Task<ActionResult> BuscarPorId(Guid id)
         {
@@ -36,6 +48,9 @@ namespace SistemaVendas.Api.Controllers
             return Ok(pedido);
         }
 
+        /// <summary>
+        /// Confirma um pedido e gera delivery quando o tipo for delivery.
+        /// </summary>
         [HttpPut("{id:guid}/confirmar")]
         public async Task<ActionResult> Confirmar(Guid id)
         {
@@ -43,6 +58,9 @@ namespace SistemaVendas.Api.Controllers
             return Ok(pedido);
         }
 
+        /// <summary>
+        /// Cancela um pedido e a delivery associada, quando existir.
+        /// </summary>
         [HttpPut("{id:guid}/cancelar")]
         public async Task<ActionResult> Cancelar(Guid id)
         {

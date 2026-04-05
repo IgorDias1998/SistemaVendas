@@ -19,6 +19,7 @@ namespace SistemaVendas.Infrastructure.Persistence
         public DbSet<Delivery> Deliveries { get; set; }
         public DbSet<Rota> Rotas { get; set; }
         public DbSet<ParadaRota> ParadasRota { get; set; }
+        public DbSet<LogMudancaRota> LogsMudancaRota { get; set; }
         public DbSet<Usuario> Usuarios { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

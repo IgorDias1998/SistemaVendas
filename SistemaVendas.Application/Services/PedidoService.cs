@@ -1,3 +1,4 @@
+using FluentValidation;
 using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Domain.Entities;
@@ -10,17 +11,20 @@ namespace SistemaVendas.Application.Services
         private readonly IClienteRepository _clienteRepository;
         private readonly IProdutoRepository _produtoRepository;
         private readonly IDeliveryRepository _deliveryRepository;
+        private readonly IValidator<PedidoCriarDto> _pedidoValidator;
 
         public PedidoService(
             IPedidoRepository pedidoRepository,
             IClienteRepository clienteRepository,
             IProdutoRepository produtoRepository,
-            IDeliveryRepository deliveryRepository)
+            IDeliveryRepository deliveryRepository,
+            IValidator<PedidoCriarDto> pedidoValidator)
         {
             _pedidoRepository = pedidoRepository;
             _clienteRepository = clienteRepository;
             _produtoRepository = produtoRepository;
             _deliveryRepository = deliveryRepository;
+            _pedidoValidator = pedidoValidator;
         }
 
         public async Task<PedidoReadDto> CriarRascunhoAsync(PedidoCriarDto pedidoDto)
@@ -28,27 +32,25 @@ namespace SistemaVendas.Application.Services
             if (pedidoDto is null)
                 throw new ArgumentNullException(nameof(pedidoDto));
 
+            await _pedidoValidator.ValidateAndThrowAsync(pedidoDto);
+
             var cliente = await _clienteRepository.BuscarClientePorIdAsync(pedidoDto.ClienteId);
 
             if (cliente is null)
-                throw new KeyNotFoundException("Cliente não encontrado.");
+                throw new KeyNotFoundException("Cliente nao encontrado.");
 
             var itens = new List<PedidoProduto>();
 
             foreach (var itemDto in pedidoDto.Itens)
             {
-                if (itemDto.Quantidade <= 0)
-                    throw new ArgumentException("A quantidade do item deve ser maior que zero.", nameof(pedidoDto));
-
                 var produto = await _produtoRepository.BuscarProdutoPorIdAsync(itemDto.ProdutoId);
 
                 if (produto is null)
-                    throw new KeyNotFoundException($"Produto não encontrado para o id {itemDto.ProdutoId}.");
+                    throw new KeyNotFoundException($"Produto nao encontrado para o id {itemDto.ProdutoId}.");
 
                 itens.Add(new PedidoProduto
                 {
                     ProdutoId = produto.ProdutoId,
-                    Produto = produto,
                     Quantidade = itemDto.Quantidade,
                     PrecoUnitario = produto.PrecoProduto,
                     PrecoTotal = produto.PrecoProduto * itemDto.Quantidade
@@ -82,7 +84,7 @@ namespace SistemaVendas.Application.Services
             var pedido = await _pedidoRepository.BuscarPorIdAsync(pedidoId);
 
             if (pedido is null)
-                throw new KeyNotFoundException("Pedido não encontrado.");
+                throw new KeyNotFoundException("Pedido nao encontrado.");
 
             return MapearParaResponse(pedido);
         }
@@ -92,10 +94,10 @@ namespace SistemaVendas.Application.Services
             var pedido = await _pedidoRepository.BuscarPorIdAsync(pedidoId);
 
             if (pedido is null)
-                throw new KeyNotFoundException("Pedido não encontrado.");
+                throw new KeyNotFoundException("Pedido nao encontrado.");
 
             if (pedido.Status == StatusPedido.Cancelado)
-                throw new InvalidOperationException("Pedido cancelado não pode ser confirmado.");
+                throw new InvalidOperationException("Pedido cancelado nao pode ser confirmado.");
 
             if (!pedido.Itens.Any())
                 throw new InvalidOperationException("O pedido deve possuir ao menos um item para ser confirmado.");
@@ -108,12 +110,12 @@ namespace SistemaVendas.Application.Services
                 var cliente = pedido.Cliente ?? await _clienteRepository.BuscarClientePorIdAsync(pedido.ClienteId);
 
                 if (cliente is null)
-                    throw new KeyNotFoundException("Cliente não encontrado para geração do delivery.");
+                    throw new KeyNotFoundException("Cliente nao encontrado para geracao do delivery.");
 
                 var endereco = cliente.Enderecos.FirstOrDefault();
 
                 if (endereco is null)
-                    throw new InvalidOperationException("O cliente precisa ter endereço para gerar delivery.");
+                    throw new InvalidOperationException("O cliente precisa ter endereco para gerar delivery.");
 
                 var delivery = new Delivery
                 {
@@ -136,10 +138,10 @@ namespace SistemaVendas.Application.Services
             var pedido = await _pedidoRepository.BuscarPorIdAsync(pedidoId);
 
             if (pedido is null)
-                throw new KeyNotFoundException("Pedido não encontrado.");
+                throw new KeyNotFoundException("Pedido nao encontrado.");
 
             if (pedido.Status == StatusPedido.Completo)
-                throw new InvalidOperationException("Pedido completo não pode ser cancelado.");
+                throw new InvalidOperationException("Pedido completo nao pode ser cancelado.");
 
             pedido.Status = StatusPedido.Cancelado;
 

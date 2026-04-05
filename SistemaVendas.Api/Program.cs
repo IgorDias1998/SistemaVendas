@@ -1,9 +1,11 @@
+using System.Reflection;
 using System.Text;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using SistemaVendas.Application.DTOs;
 using SistemaVendas.Application.Interfaces;
 using SistemaVendas.Application.Services;
@@ -17,7 +19,46 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "SistemaVendas API",
+        Version = "v1",
+        Description = "API de estudo para produtos, clientes, pedidos, deliveries e rotas."
+    });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Informe o token JWT no formato: Bearer {seu_token}"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
+    if (File.Exists(xmlPath))
+        options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+});
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SistemaVendas";
@@ -25,8 +66,7 @@ var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SistemaVendasClient"
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "SistemaVendas-Secret-Key-Dev-1234567890";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString)
-);
+    options.UseSqlServer(connectionString));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -60,6 +100,7 @@ builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
 builder.Services.AddScoped<IDeliveryService, DeliveryService>();
 builder.Services.AddScoped<IRotaRepository, RotaRepository>();
 builder.Services.AddScoped<IRotaService, RotaService>();
+builder.Services.AddScoped<ILogMudancaRotaRepository, LogMudancaRotaRepository>();
 
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
@@ -69,11 +110,16 @@ builder.Services.AddScoped<IPasswordHasher, PasswordHasherService>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 
 builder.Services.AddHttpClient<ICepService, ViaCepService>();
-
 builder.Services.AddScoped<IProdutoImportService, ProdutoImportService>();
 
 builder.Services.AddScoped<IValidator<ProdutoCriarDto>, ProdutoValidator>();
 builder.Services.AddScoped<IValidator<ClienteCreateDto>, ClienteCreateValidator>();
+builder.Services.AddScoped<IValidator<AuthLoginDto>, AuthLoginValidator>();
+builder.Services.AddScoped<IValidator<UsuarioCriarDto>, UsuarioCriarValidator>();
+builder.Services.AddScoped<IValidator<PedidoCriarDto>, PedidoCriarValidator>();
+builder.Services.AddScoped<IValidator<RotaCriarDto>, RotaCriarValidator>();
+builder.Services.AddScoped<IValidator<RotaReordenarParadasDto>, RotaReordenarParadasValidator>();
+builder.Services.AddScoped<IValidator<DeliveryAtualizarStatusDto>, DeliveryAtualizarStatusValidator>();
 
 var app = builder.Build();
 
@@ -85,12 +131,21 @@ app.UseExceptionHandler(handler =>
 
         var (statusCode, title) = exception switch
         {
-            ArgumentException => (StatusCodes.Status400BadRequest, "Erro de validação"),
-            InvalidOperationException => (StatusCodes.Status400BadRequest, "Operação inválida"),
-            KeyNotFoundException => (StatusCodes.Status404NotFound, "Recurso não encontrado"),
-            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Não autorizado"),
+            ValidationException => (StatusCodes.Status400BadRequest, "Erro de validacao"),
+            ArgumentException => (StatusCodes.Status400BadRequest, "Erro de validacao"),
+            InvalidOperationException => (StatusCodes.Status400BadRequest, "Operacao invalida"),
+            KeyNotFoundException => (StatusCodes.Status404NotFound, "Recurso nao encontrado"),
+            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Nao autorizado"),
             _ => (StatusCodes.Status500InternalServerError, "Erro interno")
         };
+
+        var errors = exception is ValidationException validationException
+            ? validationException.Errors
+                .GroupBy(error => error.PropertyName)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.Select(error => error.ErrorMessage).Distinct().ToArray())
+            : null;
 
         context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/json";
@@ -99,7 +154,8 @@ app.UseExceptionHandler(handler =>
         {
             title,
             detail = exception?.Message,
-            status = statusCode
+            status = statusCode,
+            errors
         });
     });
 });
